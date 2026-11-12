@@ -1,0 +1,14 @@
+{
+    "best_params": {
+        "learning_rate": 0.06958385771506816,
+        "max_depth": 10,
+        "min_child_weight": 12,
+        "subsample": 0.8741033855094635,
+        "colsample_bytree": 0.7081655260410183,
+        "reg_alpha": 0.40184620434662083,
+        "reg_lambda": 1.8719620948401228
+    },
+    "best_iteration": 999,
+    "val_wmae": 1616.7842049607464,
+    "train_wmae": 882.2423922410351
+}

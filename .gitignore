@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+catboost_info/
+
+# Model binaries (regenerate via python training_pipeline.py --model xgboost)
+*.joblib
+models/*.joblib
+best_xgboost_checkpoint.joblib
+best_xgboost_checkpoint.joblib*
+
+# Large data files (download from Kaggle: kaggle competitions download -c walmart-recruiting-store-sales-forecasting)
+data/train.csv/
+data/test.csv/
+data/features.csv/
+data/sampleSubmission.csv/
+data/*.csv
+
+# Parquet intermediates
+*.parquet
+
+# Node
+portal/node_modules/
+portal/.next/
+portal/out/
+
+# OS
+.DS_Store
+Thumbs.db

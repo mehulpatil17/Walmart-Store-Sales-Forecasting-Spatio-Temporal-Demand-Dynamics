@@ -1,0 +1,7 @@
+Model,Model_Family,Train_WMAE,Val_WMAE,Generalization_Gap,Val_MAE,Val_RMSE,Val_R2,Train_Time_sec,Infer_Time_sec,Status
+Ridge Regression,Regularized Linear,2406.23,2506.24,100.01,2483.67,4561.8,0.9577,1.63,0.43,Underfitting (High Bias)
+CatBoost Regressor,Oblivious Boosted Trees,1486.99,1841.93,354.94,1821.98,3833.5,0.9701,19.65,0.05,Slight Underfitting / Conservative Trees
+Random Forest Regressor,Bagged Ensembles,1257.07,1730.04,472.97,1718.29,3526.26,0.9747,51.83,0.33,Well Regularized
+LightGBM Regressor,Histogram Gradient Boosting,1158.55,1736.87,578.31,1723.84,3699.59,0.9721,85.97,2.25,Competitive
+XGBoost Regressor (Default),Extreme Gradient Boosting,1047.66,1692.8,645.14,1685.12,3536.54,0.9746,13.65,0.6,Top Baseline Candidate
+XGBoost Regressor (Optuna Tuned),Extreme Gradient Boosting,882.24,1616.78,734.54,1606.97,3399.11,0.9765,18.2,0.62,Selected Final Optimal Model

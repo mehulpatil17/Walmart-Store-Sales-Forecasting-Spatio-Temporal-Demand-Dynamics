@@ -1,0 +1,211 @@
+{
+  "project": "Walmart Store Sales Forecasting",
+  "dataset_domain": "Hierarchical Multi-Series Spatio-Temporal Retail Sales",
+  "evaluation_metric": "Weighted Mean Absolute Error (WMAE)",
+  "models": {
+    "XGBoost_Regressor": {
+      "model_family": "Extreme Gradient Boosting (Selected Optimal)",
+      "description": "Gradient boosted decision tree ensemble minimizing weighted absolute error loss using second-order Taylor expansion and exact tree split pruning.",
+      "hyperparameters": {
+        "learning_rate": {
+          "initial_recommended": 0.08,
+          "search_range": [0.03, 0.15],
+          "final_experimental_value": 0.06958,
+          "justification": "Moderate shrinkage prevents gradient oscillations across volatile holiday spikes while ensuring steady monotonic convergence."
+        },
+        "n_estimators": {
+          "initial_recommended": 800,
+          "search_range": [300, 1500],
+          "final_experimental_value": 1000,
+          "justification": "Higher capacity combined with smaller learning rate captures subtle department-specific seasonal curves; monitored with early stopping."
+        },
+        "max_depth": {
+          "initial_recommended": 8,
+          "search_range": [6, 11],
+          "final_experimental_value": 10,
+          "justification": "Depth 10 accommodates multi-way non-linear interactions between Store Type, Department ID, and specific holiday ISO weeks."
+        },
+        "min_child_weight": {
+          "initial_recommended": 5,
+          "search_range": [1, 20],
+          "final_experimental_value": 12,
+          "justification": "Acts as an essential variance stabilizer; forces leaves to contain at least 12 weighted samples, preventing overfitting on rare returns or outlier weeks."
+        },
+        "subsample": {
+          "initial_recommended": 0.85,
+          "search_range": [0.65, 0.95],
+          "final_experimental_value": 0.8741,
+          "justification": "Row subsampling introduces stochastic bagging diversity, reducing tree correlation and mitigating high variance."
+        },
+        "colsample_bytree": {
+          "initial_recommended": 0.85,
+          "search_range": [0.65, 0.95],
+          "final_experimental_value": 0.7082,
+          "justification": "Feature subsampling prevents dominant features (like store size or historical department median) from monopolizing every split."
+        },
+        "reg_alpha": {
+          "initial_recommended": 0.1,
+          "search_range": [0.01, 5.0],
+          "final_experimental_value": 0.4018,
+          "justification": "L1 leaf regularization induces sparsity in leaf weight updates, eliminating noisy splits from zero-markdown periods."
+        },
+        "reg_lambda": {
+          "initial_recommended": 1.0,
+          "search_range": [0.5, 10.0],
+          "final_experimental_value": 1.8720,
+          "justification": "L2 regularization smooths leaf outputs, penalizing extreme forecast spikes during regular non-promotional periods."
+        },
+        "early_stopping_patience": {
+          "initial_recommended": 40,
+          "search_range": [25, 60],
+          "final_experimental_value": 40,
+          "justification": "Safely halts training when validation WMAE fails to improve for 40 consecutive boosting rounds."
+        },
+        "loss_objective": {
+          "initial_recommended": "reg:absoluteerror",
+          "search_range": ["reg:absoluteerror", "reg:pseudohubererror"],
+          "final_experimental_value": "reg:absoluteerror",
+          "justification": "Directly minimizes MAE, which under sample weights (5x on holidays, 1x regular) directly targets the competition WMAE."
+        }
+      }
+    },
+    "LightGBM_Regressor": {
+      "model_family": "Histogram-Based Gradient Boosted Decision Trees",
+      "description": "Fast leaf-wise tree growth with gradient-based histogram binning and native categorical handling.",
+      "hyperparameters": {
+        "learning_rate": {
+          "initial_recommended": 0.08,
+          "search_range": [0.03, 0.15],
+          "final_experimental_value": 0.08,
+          "justification": "Balances convergence speed with granular seasonal partitioning."
+        },
+        "n_estimators": {
+          "initial_recommended": 800,
+          "search_range": [400, 1500],
+          "final_experimental_value": 797,
+          "justification": "Optimal stopping reached at 797 iterations during validation benchmarking."
+        },
+        "num_leaves": {
+          "initial_recommended": 127,
+          "search_range": [63, 255],
+          "final_experimental_value": 127,
+          "justification": "Allows deep asymmetry in holiday-sensitive tree branches without building unnecessary leaves elsewhere."
+        },
+        "subsample": {
+          "initial_recommended": 0.85,
+          "search_range": [0.70, 0.95],
+          "final_experimental_value": 0.85,
+          "justification": "Mitigates variance across contiguous weekly observations."
+        },
+        "colsample_bytree": {
+          "initial_recommended": 0.85,
+          "search_range": [0.70, 0.95],
+          "final_experimental_value": 0.85,
+          "justification": "Feature subspace decorrelation."
+        },
+        "reg_alpha": {
+          "initial_recommended": 0.1,
+          "search_range": [0.01, 5.0],
+          "final_experimental_value": 0.1,
+          "justification": "Sparsity regularization on leaf predictions."
+        },
+        "reg_lambda": {
+          "initial_recommended": 1.0,
+          "search_range": [0.5, 10.0],
+          "final_experimental_value": 1.0,
+          "justification": "L2 regularization prevents runaway predictions on small volume departments."
+        },
+        "loss_objective": {
+          "initial_recommended": "regression_l1",
+          "search_range": ["regression_l1", "huber"],
+          "final_experimental_value": "regression_l1",
+          "justification": "L1 objective aligns strictly with WMAE."
+        }
+      }
+    },
+    "CatBoost_Regressor": {
+      "model_family": "Oblivious Boosted Trees with Ordered Target Statistics",
+      "description": "Symmetric decision trees with target statistics to prevent categorical target leakage.",
+      "hyperparameters": {
+        "learning_rate": {
+          "initial_recommended": 0.09,
+          "search_range": [0.04, 0.15],
+          "final_experimental_value": 0.09,
+          "justification": "Standard boosting rate for oblivious trees."
+        },
+        "iterations": {
+          "initial_recommended": 700,
+          "search_range": [400, 1200],
+          "final_experimental_value": 699,
+          "justification": "Sufficient to stabilize validation MAE."
+        },
+        "depth": {
+          "initial_recommended": 7,
+          "search_range": [5, 9],
+          "final_experimental_value": 7,
+          "justification": "Oblivious tree depth creates symmetric 2^7 = 128 table lookups per tree."
+        },
+        "l2_leaf_reg": {
+          "initial_recommended": 3.0,
+          "search_range": [1.0, 10.0],
+          "final_experimental_value": 3.0,
+          "justification": "Strong shrinkage prevents leaf memorization."
+        },
+        "loss_function": {
+          "initial_recommended": "MAE",
+          "search_range": ["MAE"],
+          "final_experimental_value": "MAE",
+          "justification": "Aligned with absolute error evaluation."
+        }
+      }
+    },
+    "Random_Forest_Regressor": {
+      "model_family": "Bagged Ensemble of De-correlated Decision Trees",
+      "description": "Parallel bagging ensemble providing high robustness to target outliers and negative sales noise.",
+      "hyperparameters": {
+        "n_estimators": {
+          "initial_recommended": 100,
+          "search_range": [50, 250],
+          "final_experimental_value": 100,
+          "justification": "100 trees provide reliable variance reduction with manageable training wall time (~51s)."
+        },
+        "max_depth": {
+          "initial_recommended": 16,
+          "search_range": [12, 22],
+          "final_experimental_value": 16,
+          "justification": "Explicit depth cap prevents full-depth leaf memorization on individual store-dept transactions."
+        },
+        "min_samples_leaf": {
+          "initial_recommended": 4,
+          "search_range": [2, 10],
+          "final_experimental_value": 4,
+          "justification": "Ensures terminal nodes average over multiple weekly observations."
+        },
+        "max_features": {
+          "initial_recommended": 0.8,
+          "search_range": [0.6, 1.0],
+          "final_experimental_value": 0.8,
+          "justification": "Subsampling features per split reduces tree correlation."
+        }
+      }
+    },
+    "Ridge_Regression": {
+      "model_family": "L2-Regularized Linear Model (Baseline)",
+      "description": "Closed-form L2 regularized linear model establishing the benchmark performance floor and diagnosing non-linear bias.",
+      "hyperparameters": {
+        "alpha": {
+          "initial_recommended": 100.0,
+          "search_range": [1.0, 1000.0],
+          "final_experimental_value": 100.0,
+          "justification": "Moderate shrinkage accounts for collinearity among store size, store type, and macroeconomic metrics."
+        },
+        "standardization": {
+          "initial_recommended": true,
+          "search_range": [true],
+          "final_experimental_value": true,
+          "justification": "Required prior to penalization so scale differences (Store Size ~10^5 vs Fuel Price ~10^0) do not distort coefficient shrinkage."
+        }
+      }
+    }
+  }
+}
