@@ -325,14 +325,13 @@ export default function OverviewPage() {
             <div key={idx} className="flex items-center gap-2 text-xs">
               <span className="font-bold text-zinc-900 dark:text-zinc-100">{m.name}</span>
               <span className="text-zinc-500 dark:text-zinc-400 tabular-nums font-medium">(Roll No. {m.roll})</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-900 text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800">
-                {m.role}
-              </span>
+              {m.role ? (
+                <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-900 text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800">
+                  {m.role}
+                </span>
+              ) : null}
             </div>
           ))}
-          <div className="ml-auto text-xs text-zinc-500 dark:text-zinc-400 hidden md:block">
-            {metadata.institute}
-          </div>
         </div>
       </section>
 
