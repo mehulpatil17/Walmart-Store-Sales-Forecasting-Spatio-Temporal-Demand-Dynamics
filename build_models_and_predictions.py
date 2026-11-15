@@ -4,7 +4,7 @@ Execution script for Phase 3, 4, and 5:
 - Trains Model 1 (Ridge Regression) and Model 2 (Random Forest)
 - Generates holdout predictions across the 39-week validation period
 - Computes comprehensive overall and holiday-specific error metrics
-- Serializes checkpoints and prediction tables for the Streamlit dashboard
+- Serializes checkpoints and prediction tables
 """
 
 import os
@@ -253,7 +253,7 @@ for name, col in methods.items():
 with open("metrics_summary.json", "w") as f:
     json.dump(metrics_summary, f, indent=4)
 
-# Save holdout predictions for fast Streamlit UI rendering
+# Save holdout predictions table
 save_cols = [
     'Store', 'Dept', 'Date', 'Weekly_Sales', 'IsHoliday', 'Week', 'Year',
     'Pred_Base_Median', 'Pred_Base_Lag1', 'Pred_Base_Lag52',
@@ -264,7 +264,7 @@ va_save['Date'] = va_save['Date'].dt.strftime('%Y-%m-%d')
 va_save.to_parquet("holdout_predictions.parquet", index=False)
 print(f"\nSaved {len(va_save)} holdout predictions to holdout_predictions.parquet")
 
-# Also save historical weekly actuals for Streamlit history view
+# Also save historical weekly actuals for model server & analysis
 hist_save = tr[['Store', 'Dept', 'Date', 'Weekly_Sales', 'IsHoliday', 'Week', 'Year']].copy()
 hist_save['Date'] = hist_save['Date'].dt.strftime('%Y-%m-%d')
 hist_save.to_parquet("history_actuals.parquet", index=False)

@@ -28,7 +28,7 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 | `/predictor` | Model Predictor | Zero-latency client-side calibrated surrogate scoring engine with scenario presets and real-time demand gauge |
 | `/qna` | Oral Defense | ES 335 Individual Understanding and Defense declarations (Mehul Patil & Akshit Kumar), 16 academic Q&As with search and category filters |
 
-> **Note on Deliverables:** The primary published deliverable is the static Next.js Research Portal hosted on GitHub Pages above. An auxiliary local Streamlit dashboard (`app.py`) is also included in this repository for local Python time-series exploration.
+> **Note on Deliverables:** The primary published deliverable is the Next.js Research Portal hosted on GitHub Pages above.
 
 ---
 
