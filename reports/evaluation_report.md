@@ -2,7 +2,7 @@
 **Project:** Walmart Recruiting - Store Sales Forecasting  
 **Author:** Senior Machine Learning Engineer, Data Scientist & ML Researcher  
 **Date:** October 2026  
-**Artifact Referenced:** `training_curves.png`, `model_comparison.csv`
+**Artifact Referenced:** `../training_curves.png`, `../model_comparison.csv`
 
 ---
 

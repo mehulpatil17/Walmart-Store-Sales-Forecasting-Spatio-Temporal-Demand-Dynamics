@@ -382,6 +382,19 @@ export default function OverviewPage() {
             <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
               <strong className="text-zinc-950 dark:text-white">Empirical Findings:</strong> {metadata.verdict.summary}
             </p>
+
+            {/* Unit of Observation Callout Box */}
+            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700/80 space-y-1.5 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <Database size={15} className="text-zinc-800 dark:text-zinc-200" />
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
+                  Unit of Observation (What One Row Represents)
+                </span>
+              </div>
+              <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                {(metadata as any)?.row_representation || "Each row represents the weekly aggregate point-of-sale sales (Weekly_Sales, in $ USD) for a specific department within a specific store over a contiguous 7-day ISO calendar week (uniquely keyed by Store, Dept, and Date)."}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -597,6 +610,26 @@ export default function OverviewPage() {
         <div>
           <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Data Engineering</h2>
           <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Dataset Topology & Schema Panel</h3>
+        </div>
+
+        {/* Unit of Observation Callout Banner */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 flex-shrink-0 mt-0.5">
+              <Database size={16} />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-0.5">
+                Unit of Observation (What One Row Represents)
+              </span>
+              <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
+                Each row represents the weekly aggregate point-of-sale sales (<code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Weekly_Sales</code>, in $ USD) for a specific department within a specific store over a contiguous 7-day ISO calendar week (uniquely keyed by <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Store</code>, <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Dept</code>, and <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Date</code>).
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-center px-2.5 py-1 rounded text-[11px] font-semibold bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+            536,634 Total Rows
+          </span>
         </div>
 
         {/* Leakage Timeline Firewall visual */}

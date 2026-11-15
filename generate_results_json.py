@@ -26,6 +26,7 @@ def build_results():
         "topic": "Hierarchical Multi-Series Spatio-Temporal Retail Sales Forecasting",
         "task_type": "Continuous Regression with Asymmetric Loss (WMAE)",
         "target_definition": "Weekly_Sales ($ USD point-of-sale aggregated revenue per Store-Department over 7-day ISO weeks)",
+        "row_representation": "Each row represents the weekly aggregate point-of-sale sales (Weekly_Sales, in $ USD) for a specific department within a specific store over a contiguous 7-day ISO calendar week (uniquely keyed by Store, Dept, and Date).",
         "primary_research_question": "Can gradient-boosted decision trees with hierarchical out-of-fold target encodings and calendar surge flags improve department-level weekly sales forecasting over persistence and seasonal baselines on high-volatility holiday weeks without data leakage?",
         "primary_metric": "Weighted Mean Absolute Error (WMAE)",
         "metric_justification": "Retail holiday weeks generate disproportionate sales volume and stockout risk; WMAE places a 5x penalty weight on holiday weeks (w=5) vs regular weeks (w=1), mirroring the Kaggle competition evaluation.",

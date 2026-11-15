@@ -3,7 +3,7 @@
 **Author:** Senior Machine Learning Engineer, Data Scientist & ML Researcher  
 **Date:** October 2026  
 **Recommended Model:** **Tuned Extreme Gradient Boosting Regressor (XGBoost)**  
-**Checkpoint Path:** `c:\Users\MEHUL\OneDrive\Documents\study\ML\project 3\best_xgboost_checkpoint.joblib`  
+**Checkpoint Path:** `c:\Users\MEHUL\OneDrive\Documents\study\ML\project 3\models\xgboost_model.joblib`  
 **Test Predictions:** `c:\Users\MEHUL\OneDrive\Documents\study\ML\project 3\submission.csv`
 
 ---

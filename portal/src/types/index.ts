@@ -8,6 +8,7 @@ export interface ProjectMetadata {
   topic: string;
   task_type: string;
   target_definition: string;
+  row_representation?: string;
   primary_research_question: string;
   primary_metric: string;
   metric_justification: string;

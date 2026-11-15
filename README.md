@@ -109,11 +109,14 @@ Open http://localhost:3000.
 
 ## Project Structure
 
-| File | Purpose |
+| File / Directory | Purpose |
 |---|---|
+| `walmart_sales_forecasting.ipynb` | End-to-end reproducible Jupyter Notebook walking through data ingestion, EDA, leakage-free preprocessing, model evaluation, and failure audits |
 | `training_pipeline.py` | End-to-end leakage-free training with chronological OOT split |
 | `build_models_and_predictions.py` | Multi-model benchmark (baselines + Ridge + RF + XGBoost) |
 | `generate_results_json.py` | Generates `results.json` for the portal |
+| `reports/` | Academic coursework reports (EDA report, evaluation report, model recommendation, course prompt) |
+| `PROJECT_FILE_INVENTORY.md` | Full repository file index with purpose, technical role, and status for each file |
 | `portal/` | Next.js interactive research dashboard |
 | `data/` | Raw Kaggle CSV files (not committed; download via Kaggle CLI) |
 | `models/` | Trained model checkpoints (not committed; regenerate via pipeline) |
@@ -137,6 +140,17 @@ This project used AI-assisted tools (including large language models) for:
 - Documentation drafting and proofreading
 
 All model design decisions, hyperparameter choices, evaluation methodology, and scientific interpretations were made and verified by the authors. AI-generated outputs were independently checked against empirical results. The authors take full responsibility for all claims and can defend every result in a viva examination.
+
+---
+
+## Citations & Academic References
+
+1. **Chen, T., & Guestrin, C. (2016).** XGBoost: A Scalable Tree Boosting System. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 785–794).
+2. **Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., & Liu, T.-Y. (2017).** LightGBM: A Highly Efficient Gradient Boosting Decision Tree. In *Advances in Neural Information Processing Systems (NeurIPS 2017)* (Vol. 30, pp. 3146–3154).
+3. **Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., & Gulin, A. (2018).** CatBoost: Unbiased boosting with categorical features. In *Advances in Neural Information Processing Systems (NeurIPS 2018)* (Vol. 31, pp. 6638–6648).
+4. **Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019).** Optuna: A Next-generation Hyperparameter Optimization Framework. In *Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining* (pp. 2623–2631).
+5. **Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011).** Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research (JMLR)*, 12, 2825–2830.
+6. **Walmart Inc. / Kaggle (2014).** Walmart Recruiting - Store Sales Forecasting: Historical sales data for 45 Walmart stores located in different regions. Kaggle Competition Dataset. https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting
 
 ---
 
