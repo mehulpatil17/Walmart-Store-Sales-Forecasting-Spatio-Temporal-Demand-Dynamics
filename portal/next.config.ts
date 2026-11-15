@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 
+const repoName = "Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics";
+
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  output: "export",
+  basePath: `/${repoName}`,
+  images: {
+    unoptimized: true,
+  },
+  trailingSlash: true,
   turbopack: {
     rules: {
       "*.css": {

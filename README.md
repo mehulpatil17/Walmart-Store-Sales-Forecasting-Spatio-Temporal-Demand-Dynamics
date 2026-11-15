@@ -16,17 +16,19 @@
 
 ## Interactive Research Portal
 
-A multi-page academic research dashboard built with Next.js, TypeScript, and Tailwind CSS.
+A multi-page academic research dashboard built with Next.js, TypeScript, and Tailwind CSS, fully exported as a static site hosted on GitHub Pages for the ES 335 course deliverable.
 
-**Live Site:** [https://mehul-1502.github.io/ML-Project](https://mehul-1502.github.io/ML-Project)  
-**Source Code:** [https://github.com/Mehul-1502/ML-Project](https://github.com/Mehul-1502/ML-Project)
+**Live Site:** [https://mehulpatil17.github.io/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics/](https://mehulpatil17.github.io/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics/)  
+**Source Code:** [https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics](https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics)
 
 | Route | Page | Highlights |
 |---|---|---|
-| `/` | Research Overview | KPI scorecard, model ladder, error-tolerance slider, confusion matrix, limitations |
-| `/studio` | Data Studio | Cohort overlap matrix, group-by explorer with CSV export |
-| `/predictor` | Model Predictor | Surrogate scoring engine with presets and demand gauge |
-| `/qna` | Oral Defense | 16 academic Q&As with search and category filter |
+| `/` | Research Overview | KPI scorecard, model ladder, error-tolerance slider, confusion matrix, limitations, oral defense gateway |
+| `/studio` | Data Studio | Cohort overlap matrix, interactive 39-week holdout trajectory inspector (Store & Dept dropdowns), group-by explorer with CSV export |
+| `/predictor` | Model Predictor | Zero-latency client-side calibrated surrogate scoring engine with scenario presets and real-time demand gauge |
+| `/qna` | Oral Defense | ES 335 Individual Understanding and Defense declarations (Mehul Patil & Akshit Kumar), 16 academic Q&As with search and category filters |
+
+> **Note on Deliverables:** The primary published deliverable is the static Next.js Research Portal hosted on GitHub Pages above. An auxiliary local Streamlit dashboard (`app.py`) is also included in this repository for local Python time-series exploration.
 
 ---
 
@@ -72,8 +74,8 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 
 ### 1. Clone & Setup
 ```bash
-git clone https://github.com/Mehul-1502/ML-Project.git
-cd ML-Project
+git clone https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics.git
+cd Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics
 pip install -r requirements.txt
 ```
 

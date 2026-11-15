@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import resultsData from "@/data/results.json";
 import {
   Sparkles,
@@ -325,13 +326,33 @@ export default function OverviewPage() {
             <div key={idx} className="flex items-center gap-2 text-xs">
               <span className="font-bold text-zinc-900 dark:text-zinc-100">{m.name}</span>
               <span className="text-zinc-500 dark:text-zinc-400 tabular-nums font-medium">(Roll No. {m.roll})</span>
-              {m.role ? (
-                <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-900 text-[11px] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800">
-                  {m.role}
-                </span>
-              ) : null}
             </div>
           ))}
+        </div>
+
+        {/* ES 335 Rubric Deliverable: Oral Defense & Individual Understanding Direct Access */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 text-white dark:bg-zinc-900 border border-slate-800 dark:border-zinc-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-amber-400/20 text-amber-300 flex-shrink-0">
+              <Award size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">ES 335 Rubric Requirement (5 Pts)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-400/20 text-amber-200 font-semibold border border-amber-400/30">Viva Defense Ready</span>
+              </div>
+              <p className="text-xs text-zinc-300 mt-1">
+                Individual student contributions, key architectural choices, evaluation methodology, and limitation defense declarations for <strong className="text-white">Mehul Patil</strong> & <strong className="text-white">Akshit Kumar</strong>.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/qna"
+            className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs shadow transition-all duration-200 active:scale-95"
+          >
+            <span>Review Oral Defense Declarations</span>
+            <ArrowRight size={14} />
+          </Link>
         </div>
       </section>
 
@@ -2243,8 +2264,8 @@ export default function OverviewPage() {
             <div className="p-4 rounded-xl bg-zinc-950 dark:bg-black text-zinc-100 font-mono text-xs overflow-x-auto space-y-3 border border-zinc-800">
               <div>
                 <span className="text-zinc-500 select-none"># 1. Clone repository, setup environment, and download data</span>
-                <div className="text-zinc-200 select-all">git clone https://github.com/Mehul-1502/ML-Project.git</div>
-                <div className="text-zinc-200 select-all">cd ML-Project && python -m venv venv</div>
+                <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics.git</div>
+                <div className="text-zinc-200 select-all">cd Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics && python -m venv venv</div>
                 <div className="text-zinc-200 select-all">.\venv\Scripts\activate  <span className="text-zinc-500"># On Linux/macOS: source venv/bin/activate</span></div>
                 <div className="text-zinc-200 select-all">pip install -r requirements.txt</div>
                 <div className="text-emerald-400 select-all">kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/</div>

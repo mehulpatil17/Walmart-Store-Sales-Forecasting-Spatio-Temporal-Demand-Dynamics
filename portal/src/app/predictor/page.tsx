@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import resultsData from "@/data/results.json";
 import {
   Calculator,
@@ -86,42 +87,12 @@ export default function PredictorPage() {
     setPredictionResult(null);
   };
 
-  // Scoring engine: Queries live model server via /api/predict with calibrated fallback
-  const runPrediction = async (e: React.FormEvent) => {
+  // Scoring engine: Instant client-side calibrated surrogate scoring
+  const runPrediction = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      const response = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          store,
-          dept,
-          storeType,
-          storeSize,
-          week,
-          isHoliday,
-          temperature,
-          fuelPrice,
-          cpi,
-          unemployment,
-          markdownTotal
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPredictionResult(data);
-        setHasPredicted(true);
-        setLoading(false);
-        return;
-      }
-    } catch {
-      // Fallback to client-side logic below if network error
-    }
-
-    // Client-side fallback calculation
+    // Client-side calibrated surrogate calculation (100% offline & static compatible)
     let deptBase = 15000;
     if (dept === 92) deptBase = 48000;
     else if (dept === 95) deptBase = 45000;
@@ -222,7 +193,7 @@ export default function PredictorPage() {
           <span>Surrogate Inference Notice & Non-Causal Boundary (ES 335 Rubric Requirement)</span>
         </div>
         <p className="leading-relaxed">
-          <strong>Surrogate Inference Notice:</strong> This interactive simulator executes a fast, calibrated client-side surrogate model approximating the Champion XGBoost regressor parameters (<code className="font-mono text-[11px]">objective='reg:absoluteerror'</code>) for instantaneous scenario evaluation in the browser without requiring a remote Python server. For audited, exact empirical holdout benchmark metrics ($1,616.78 WMAE on 115,588 rows), refer to the <strong><a href="/" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">Research Overview</a></strong> and <strong><a href="/studio" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">Data Studio</a></strong>.
+          <strong>Surrogate Inference Notice:</strong> This interactive simulator executes a fast, calibrated client-side surrogate model approximating the Champion XGBoost regressor parameters (<code className="font-mono text-[11px]">objective='reg:absoluteerror'</code>) for instantaneous scenario evaluation in the browser without requiring a remote Python server. For audited, exact empirical holdout benchmark metrics ($1,616.78 WMAE on 115,588 rows), refer to the <strong><Link href="/" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">Research Overview</Link></strong> and <strong><Link href="/studio" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">Data Studio</Link></strong>.
         </p>
         <p className="leading-relaxed">
           <strong>Non-Causal Interpretation:</strong> All predictions and feature coefficients represent statistical associations and historical patterns, not causal interventional treatment effects. Increasing simulated markdowns will not automatically drive higher sales without considering real-world merchandising context.

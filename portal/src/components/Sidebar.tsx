@@ -92,6 +92,7 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
       items: [
         { name: "Exploratory Studio", href: "/studio", icon: Database, sectionId: "studio" },
         { name: "Cohort Overlap Matrix", href: "/studio#overlap", icon: Layers, sectionId: "overlap" },
+        { name: "Holdout Trajectory Inspector", href: "/studio#inspector", icon: TrendingUp, sectionId: "inspector" },
         { name: "Domain Deep Dives", href: "/studio#deep-dives", icon: BarChart3, sectionId: "deep-dives" },
         { name: "Interactive Group-By", href: "/studio#explorer", icon: Table2, sectionId: "explorer" },
       ]
