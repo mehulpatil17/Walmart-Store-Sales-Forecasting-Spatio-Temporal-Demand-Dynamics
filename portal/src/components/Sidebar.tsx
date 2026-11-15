@@ -297,7 +297,7 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
 
           {/* GitHub Repository Link Button */}
           <a
-            href="https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics"
+            href="https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department"
             target="_blank"
             rel="noopener noreferrer"
             title="Open GitHub Source Repository"

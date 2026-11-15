@@ -40,7 +40,7 @@ export default function Header() {
 
         {/* Download results.json button with smooth micro-animation */}
         <a
-          href="/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics/data/results.json"
+          href="/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department/data/results.json"
           download="results.json"
           className="group relative overflow-hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-100 hover:bg-zinc-200/90 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 transition-all duration-300 ease-out border border-zinc-300/80 dark:border-zinc-700/80 active:scale-95 shadow-2xs"
           title="Download single-source-of-truth results.json"

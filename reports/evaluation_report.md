@@ -1,5 +1,6 @@
 # Comprehensive Model Evaluation & Diagnostic Report
-**Project:** Walmart Recruiting - Store Sales Forecasting  
+**Project:** Walmart Weekly Sales Forecasting by Store and Department  
+**Dataset:** Walmart Recruiting - Store Sales Forecasting (Kaggle)  
 **Author:** Senior Machine Learning Engineer, Data Scientist & ML Researcher  
 **Date:** October 2026  
 **Artifact Referenced:** `../training_curves.png`, `../model_comparison.csv`

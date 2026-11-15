@@ -1,4 +1,4 @@
-# Walmart Store Sales Forecasting & Spatio-Temporal Demand Dynamics
+# Walmart Weekly Sales Forecasting by Store and Department
 
 **Course:** ES 335: Machine Learning | **Institute:** IIT Gandhinagar  
 **Authors:** Mehul Patil (25110200) & Akshit Kumar (25110022)  
@@ -18,8 +18,8 @@
 
 A multi-page academic research dashboard built with Next.js, TypeScript, and Tailwind CSS, fully exported as a static site hosted on GitHub Pages for the ES 335 course deliverable.
 
-**Live Site:** [https://mehulpatil17.github.io/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics/](https://mehulpatil17.github.io/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics/)  
-**Source Code:** [https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics](https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics)
+**Live Site:** [https://mehulpatil17.github.io/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department/](https://mehulpatil17.github.io/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department/)  
+**Source Code:** [https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department](https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department)
 
 | Route | Page | Highlights |
 |---|---|---|
@@ -74,8 +74,8 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 
 ### 1. Clone & Setup
 ```bash
-git clone https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics.git
-cd Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics
+git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git
+cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department
 pip install -r requirements.txt
 ```
 

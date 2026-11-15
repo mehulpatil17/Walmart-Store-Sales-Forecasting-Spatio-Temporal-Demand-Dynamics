@@ -1,4 +1,4 @@
-# Walmart Sales Forecasting & Research Portal — Project File Inventory
+# Walmart Weekly Sales Forecasting by Store and Department — Project File Inventory
 
 This document provides a comprehensive directory of every file and folder in this repository. It details each file's purpose, its role within the end-to-end Machine Learning pipeline and web application, its status as a runtime component or proof of work, and notes on removed redundant files.
 

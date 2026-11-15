@@ -1,6 +1,6 @@
 """
 ========================================================================================
-Production Training Pipeline: Walmart Store Sales Forecasting
+Production Training Pipeline: Walmart Weekly Sales Forecasting by Store and Department
 ========================================================================================
 Author: Senior Machine Learning Engineer, Data Scientist & ML Researcher
 Date: October 2026

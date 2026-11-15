@@ -2297,8 +2297,8 @@ export default function OverviewPage() {
             <div className="p-4 rounded-xl bg-zinc-950 dark:bg-black text-zinc-100 font-mono text-xs overflow-x-auto space-y-3 border border-zinc-800">
               <div>
                 <span className="text-zinc-500 select-none"># 1. Clone repository, setup environment, and download data</span>
-                <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics.git</div>
-                <div className="text-zinc-200 select-all">cd Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics && python -m venv venv</div>
+                <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git</div>
+                <div className="text-zinc-200 select-all">cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department && python -m venv venv</div>
                 <div className="text-zinc-200 select-all">.\venv\Scripts\activate  <span className="text-zinc-500"># On Linux/macOS: source venv/bin/activate</span></div>
                 <div className="text-zinc-200 select-all">pip install -r requirements.txt</div>
                 <div className="text-emerald-400 select-all">kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/</div>

@@ -1,5 +1,6 @@
 # Comprehensive Dataset Analysis & Overfitting Risk Assessment Report
-**Project:** Walmart Recruiting - Store Sales Forecasting  
+**Project:** Walmart Weekly Sales Forecasting by Store and Department  
+**Dataset:** Walmart Recruiting - Store Sales Forecasting (Kaggle)  
 **Author:** Senior Machine Learning Engineer, Data Scientist & ML Researcher  
 **Date:** October 2026  
 **Dataset Path:** `c:\Users\MEHUL\OneDrive\Documents\study\ML\project 3\data`

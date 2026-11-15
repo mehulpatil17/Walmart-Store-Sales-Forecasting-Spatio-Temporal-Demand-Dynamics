@@ -11,7 +11,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Walmart Store Sales Forecasting | Academic Research Portal (ES 335)",
+  title: "Walmart Weekly Sales Forecasting by Store and Department | Academic Research Portal (ES 335)",
   description: "IIT Gandhinagar ES 335 ML Project: Hierarchical multi-series sales forecasting, leak-free chronological validation, and hyperparameter optimization.",
 };
 

@@ -14,7 +14,7 @@ def build_results():
     
     # Core project metadata
     metadata = {
-        "title": "Walmart Store Sales Forecasting & Spatio-Temporal Demand Dynamics",
+        "title": "Walmart Weekly Sales Forecasting by Store and Department",
         "short_title": "Walmart ML Research Portal",
         "course": "ES 335: Machine Learning",
         "institute": "Indian Institute of Technology Gandhinagar",

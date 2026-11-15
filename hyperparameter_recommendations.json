@@ -1,5 +1,5 @@
 {
-  "project": "Walmart Store Sales Forecasting",
+  "project": "Walmart Weekly Sales Forecasting by Store and Department",
   "dataset_domain": "Hierarchical Multi-Series Spatio-Temporal Retail Sales",
   "evaluation_metric": "Weighted Mean Absolute Error (WMAE)",
   "models": {

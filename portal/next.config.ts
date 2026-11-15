@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const repoName = "Walmart-Store-Sales-Forecasting-Spatio-Temporal-Demand-Dynamics";
+const repoName = "Walmart-Weekly-Sales-Forecasting-by-Store-and-Department";
 
 const nextConfig: NextConfig = {
   output: "export",
