@@ -24,7 +24,10 @@ import {
   Zap,
   DollarSign,
   ArrowRight,
-  TrendingDown
+  TrendingDown,
+  Download,
+  Laptop,
+  Server
 } from "lucide-react";
 
 export default function OverviewPage() {
@@ -33,8 +36,6 @@ export default function OverviewPage() {
     dataset_architecture,
     findings,
     kpis,
-    feature_domains,
-    feature_catalogue,
     model_ladder,
     ablations,
     champion_params,
@@ -43,20 +44,28 @@ export default function OverviewPage() {
   } = resultsData;
 
   // State for interactive widgets
-  const [selectedFile, setSelectedFile] = useState<string>("train.csv");
-  const [activeDomainFilter, setActiveDomainFilter] = useState<string>("ALL");
-  const [featureSearch, setFeatureSearch] = useState<string>("");
-  const [selectedFeatureProfile, setSelectedFeatureProfile] = useState<string>("Size");
   const [errorTolerance, setErrorTolerance] = useState<number>(20);
   const [surgeThreshold, setSurgeThreshold] = useState<number>(20000);
 
-  // New interactive graph states to replace dense paragraphs with visual controls
+  // Interactive graph states to replace dense paragraphs with visual controls
   const [selectedFindingsMetric, setSelectedFindingsMetric] = useState<"wmae" | "r2" | "holiday" | "reduction">("wmae");
-  const [activeEtlStep, setActiveEtlStep] = useState<number>(0);
   const [modelLadderView, setModelLadderView] = useState<"all" | "ml" | "trees">("all");
   const [modelLadderMetric, setModelLadderMetric] = useState<"val_wmae" | "gen_gap">("val_wmae");
   const [asymmetricLossDev, setAsymmetricLossDev] = useState<number>(4000);
   const [conclusionView, setConclusionView] = useState<"formats" | "holidays">("formats");
+
+  // Reproduction & Execution Protocol interactive states
+  const [selectedReproOs, setSelectedReproOs] = useState<"windows" | "linux" | "macos">("windows");
+  const [selectedDownloadOpt, setSelectedDownloadOpt] = useState<"script" | "kaggle_cli" | "manual_browser">("script");
+  const [copiedCodeKey, setCopiedCodeKey] = useState<string | null>(null);
+
+  const handleCopyCode = (key: string, text: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedCodeKey(key);
+      setTimeout(() => setCopiedCodeKey(null), 2000);
+    }
+  };
 
   // Dynamic benchmark data for interactive discovery graph
   const findingsBenchmarkData = useMemo(() => {
@@ -113,22 +122,6 @@ export default function OverviewPage() {
     }
   }, [selectedFindingsMetric]);
 
-  // Filtered feature catalogue
-  const filteredFeatures = useMemo(() => {
-    return feature_catalogue.filter((f) => {
-      const matchDomain = activeDomainFilter === "ALL" || f.domain === activeDomainFilter;
-      const matchSearch =
-        f.name.toLowerCase().includes(featureSearch.toLowerCase()) ||
-        f.desc.toLowerCase().includes(featureSearch.toLowerCase());
-      return matchDomain && matchSearch;
-    });
-  }, [feature_catalogue, activeDomainFilter, featureSearch]);
-
-  // Selected file schema
-  const activeSchema = useMemo(() => {
-    return dataset_architecture.files.find((f) => f.filename === selectedFile);
-  }, [dataset_architecture.files, selectedFile]);
-
   // Filtered and sorted data for interactive Model Ladder Graph
   const filteredModelLadder = useMemo(() => {
     let list = [...model_ladder];
@@ -139,85 +132,6 @@ export default function OverviewPage() {
     }
     return list.sort((a, b) => a.val_wmae - b.val_wmae);
   }, [model_ladder, modelLadderView]);
-
-  // Detailed step-by-step pipeline impact data
-  const etlStepsData = [
-    {
-      step: "01",
-      name: "Relational Join",
-      title: "Store & Feature Alignment",
-      metrics: [
-        { label: "Training Records Retained", value: "421,570 / 421,570", pct: 100, tag: "100% Intact" },
-        { label: "Dropped Records Risk", value: "0 rows dropped", pct: 0, tag: "Zero Loss" },
-        { label: "Primary Key Alignment", value: "Store + Date + IsHoliday", pct: 100, tag: "Exact Match" }
-      ],
-      points: [
-        "Left outer join preserves all 421,570 ground-truth department sales observations without loss.",
-        "Avoids silent row dropping that occurs when inner joins encounter unobserved store dates.",
-        "Guarantees identical temporal index ordering with official Kaggle test evaluation records."
-      ]
-    },
-    {
-      step: "02",
-      name: "Macro Imputation",
-      title: "CPI & Unemployment Forward-Fill",
-      metrics: [
-        { label: "Raw Test Missingness", value: "68.5% Missing", pct: 68.5, tag: "Unobserved Test" },
-        { label: "Imputed Missingness", value: "0.0% Missing", pct: 100, tag: "Clean Fill" },
-        { label: "Macro Signal Retained", value: "+1.2% Tree Importance", pct: 25, tag: "Signal Retained" }
-      ],
-      points: [
-        "Store-level forward-fill propagates latest economic climate without future data leakage.",
-        "Training partition median acts as robust secondary fallback for missing store series.",
-        "Preserves macroeconomic shifts while ensuring clean numerical input vectors for trees."
-      ]
-    },
-    {
-      step: "03",
-      name: "Markdown Encoding",
-      title: "Promotional Discount Imputation",
-      metrics: [
-        { label: "Raw Pre-2011 Nulls", value: "64.2% Missing", pct: 64.2, tag: "Unrecorded Period" },
-        { label: "Clean Zero-Discount Fill", value: "0.00 USD Imputed", pct: 100, tag: "True Economic $0" },
-        { label: "Engineered Signals", value: "Total_MarkDown & Has_MarkDown", pct: 90, tag: "Dual Feature" }
-      ],
-      points: [
-        "Physical economic reality: unrecorded promotional markdowns represent a literal $0.00 customer discount.",
-        "Mean imputation would falsely fabricate phantom discounts throughout the entirety of 2010.",
-        "Engineered Total_MarkDown aggregate and Has_MarkDown indicator cleanly separate discount presence."
-      ]
-    },
-    {
-      step: "04",
-      name: "Surge Flags",
-      title: "ISO Calendar Surge Flags",
-      metrics: [
-        { label: "Thanksgiving W47 Lift", value: "+45.2% Sales Volume", pct: 90, tag: "Holiday Surge" },
-        { label: "Pre-Christmas W51 Lift", value: "+81.4% Sales Volume", pct: 100, tag: "Annual Peak" },
-        { label: "WMAE Error Reduction", value: "-$117.80 WMAE", pct: 85, tag: "Statistically Verified" }
-      ],
-      points: [
-        "Deconstructs coarse binary IsHoliday into specific calendar indicators (Weeks 6, 36, 47, 51, 52).",
-        "Captures the unflagged pre-Christmas shopping rush that standard Kaggle holiday tags completely omit.",
-        "Eliminates severe holiday under-forecasting bias on high-volume department categories."
-      ]
-    },
-    {
-      step: "05",
-      name: "Target Statistics",
-      title: "Hierarchical Out-of-Fold Priors",
-      metrics: [
-        { label: "Predictive Gain Carrier", value: "60.2% Total Model Gain", pct: 100, tag: "Primary Signal" },
-        { label: "Training Partition Scope", value: "104 Weeks Strictly", pct: 100, tag: "Zero Leakage" },
-        { label: "Shrinkage Stability", value: "sd_median & dw_median", pct: 95, tag: "Hierarchical Prior" }
-      ],
-      points: [
-        "Computes Department-Week (dw_median) and Store-Dept (sd_median) baselines strictly within train window.",
-        "Replaces high-cardinality categorical IDs with smooth continuous empirical priors.",
-        "Guarantees complete chronological barrier: 0 forward leakage into the 39-week validation holdout."
-      ]
-    }
-  ];
 
   // Dynamic calculations for Threshold Slider & Cost Model
   const toleranceItem = useMemo(() => {
@@ -246,43 +160,6 @@ export default function OverviewPage() {
       type1Cost: 477400, type2Cost: 3353000, totalCost: 3830400
     };
   }, [error_analysis, surgeThreshold]);
-
-  // Monochrome domain styling helper
-  const getDomainShade = (domainId: string) => {
-    switch (domainId) {
-      case "A":
-        return {
-          bar: "border-slate-800 dark:border-zinc-300",
-          badge: "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100",
-          tag: "bg-slate-700 text-white dark:bg-zinc-700 dark:text-zinc-100"
-        };
-      case "B":
-        return {
-          bar: "border-zinc-700 dark:border-zinc-300",
-          badge: "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-950",
-          tag: "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
-        };
-      case "C":
-        return {
-          bar: "border-zinc-500 dark:border-zinc-400",
-          badge: "bg-zinc-600 text-white dark:bg-zinc-400 dark:text-zinc-950",
-          tag: "bg-zinc-600 text-white dark:bg-zinc-400 dark:text-zinc-950"
-        };
-      case "D":
-        return {
-          bar: "border-zinc-400 dark:border-zinc-600",
-          badge: "bg-zinc-400 text-zinc-950 dark:bg-zinc-600 dark:text-white",
-          tag: "bg-zinc-400 text-zinc-950 dark:bg-zinc-600 dark:text-white"
-        };
-      case "E":
-      default:
-        return {
-          bar: "border-zinc-300 dark:border-zinc-700",
-          badge: "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200",
-          tag: "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200"
-        };
-    }
-  };
 
   return (
     <div className="space-y-12">
@@ -604,40 +481,29 @@ export default function OverviewPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 5. DATASET ARCHITECTURE & SCHEMA INSPECTOR */}
+      {/* 5. LEAKAGE-FREE VALIDATION PROTOCOL & FIREWALL */}
       {/* ------------------------------------------------------------------ */}
-      <section id="architecture" className="space-y-5">
-        <div>
-          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Data Engineering</h2>
-          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Dataset Topology & Schema Panel</h3>
-        </div>
-
-        {/* Unit of Observation Callout Banner */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 flex-shrink-0 mt-0.5">
-              <Database size={16} />
-            </div>
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-0.5">
-                Unit of Observation (What One Row Represents)
-              </span>
-              <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
-                Each row represents the weekly aggregate point-of-sale sales (<code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Weekly_Sales</code>, in $ USD) for a specific department within a specific store over a contiguous 7-day ISO calendar week (uniquely keyed by <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Store</code>, <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Dept</code>, and <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Date</code>).
-              </p>
-            </div>
+      <section id="validation" className="space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Methodological Integrity &amp; Leakage Defense</h2>
+            <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Strict Leakage-Free Validation Protocol &amp; Chronological Firewall</h3>
           </div>
-          <span className="self-start sm:self-center px-2.5 py-1 rounded text-[11px] font-semibold bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
-            536,634 Total Rows
-          </span>
+          <Link
+            href="/studio#architecture"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition shadow-2xs self-start sm:self-center"
+          >
+            <span>Explore Full Schemas in Data Studio</span>
+            <ArrowRight size={13} />
+          </Link>
         </div>
 
         {/* Leakage Timeline Firewall visual */}
         <div className="p-6 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={18} className="text-zinc-900 dark:text-zinc-100" />
+            <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
             <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
-              Chronological Leakage Firewall
+              Chronological Leakage Firewall Architecture
             </h4>
           </div>
 
@@ -650,7 +516,7 @@ export default function OverviewPage() {
                 {dataset_architecture.leakage_firewall.past_window}
               </p>
               <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-2">
-                All feature scalers, target encodings (`sd_median`, `dw_median`), and imputer stats fitted strictly here.
+                All feature scalers, target encodings (<code className="text-[10px] font-mono px-1 py-0.2 bg-zinc-200 dark:bg-zinc-800 rounded">sd_median</code>, <code className="text-[10px] font-mono px-1 py-0.2 bg-zinc-200 dark:bg-zinc-800 rounded">dw_median</code>), and imputer stats fitted strictly here.
               </p>
             </div>
 
@@ -687,515 +553,46 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        {/* Interactive File Inventory and Click-to-Inspect Schema */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* File selector cards */}
-          <div className="space-y-3">
-            <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
-              Dataset Partitions (Click to Inspect)
-            </span>
-            {dataset_architecture.files.map((file) => (
-              <button
-                key={file.filename}
-                onClick={() => setSelectedFile(file.filename)}
-                className={`w-full p-4 rounded-xl text-left border transition flex items-center justify-between ${
-                  selectedFile === file.filename
-                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700/80 dark:border-zinc-700 shadow-sm"
-                    : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Database size={15} className={selectedFile === file.filename ? "text-white dark:text-zinc-950" : "text-zinc-600 dark:text-zinc-400"} />
-                    <span className="text-sm font-bold">
-                      {file.filename}
-                    </span>
-                  </div>
-                  <span className={`text-xs block mt-1 ${selectedFile === file.filename ? "text-zinc-300 dark:text-zinc-700" : "text-zinc-500 dark:text-zinc-400"}`}>
-                    {file.role}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold block tabular-nums">
-                    {file.rows.toLocaleString()} rows
-                  </span>
-                  <span className={`text-[11px] tabular-nums ${selectedFile === file.filename ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>
-                    {file.size_mb} MB
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Schema details panel */}
-          <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <div>
-                <span className="text-xs font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider">
-                  Schema & Data Dictionary
-                </span>
-                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
-                  {activeSchema?.filename}
-                </h4>
-              </div>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800">
-                Primary Keys: {activeSchema?.keys.join(", ")}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
-                    <th className="py-2 px-3">Column Name</th>
-                    <th className="py-2 px-3">Dtype</th>
-                    <th className="py-2 px-3">Semantic Description</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                  {activeSchema?.schema.map((s, idx) => (
-                    <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                      <td className="py-2.5 px-3 font-bold text-zinc-900 dark:text-zinc-100">{s.col}</td>
-                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">{s.type}</td>
-                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">{s.desc}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 6. FEATURE MATRIX & FULL CATALOGUE */}
-      {/* ------------------------------------------------------------------ */}
-      <section id="features" className="space-y-5">
-        <div>
-          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Input Representations</h2>
-          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Feature Taxonomy & Separation Signals</h3>
-        </div>
-
-        {/* Domain Taxonomy Pills - Styled in Shades of Grey for visual hierarchy */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {feature_domains.map((dom) => {
-            const shade = getDomainShade(dom.id);
-            return (
-              <div
-                key={dom.id}
-                className={`p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm border-t-4 ${shade.bar}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Domain {dom.id}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${shade.badge}`}>
-                    {dom.count} feats
-                  </span>
-                </div>
-                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-200 mt-2">{dom.name}</h4>
-                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1.5 leading-snug">{dom.description}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Feature Signals Interactive Profile Explorer */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4">
-            <div>
-              <span className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
-                Univariate Signal Explorer
-              </span>
-              <h4 className="text-base font-bold text-zinc-900 dark:text-white">
-                Feature Band vs. Mean Target Sales
+        {/* Data Studio Bridge Card */}
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-zinc-900/70 border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Database size={16} className="text-slate-800 dark:text-zinc-200" />
+              <h4 className="text-sm font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
+                Relational Schemas, Preprocessing ETL &amp; Feature Gain Analysis
               </h4>
             </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Select Feature:</span>
-              <select
-                value={selectedFeatureProfile}
-                onChange={(e) => setSelectedFeatureProfile(e.target.value)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-medium text-zinc-900 dark:text-zinc-100 shadow-xs"
-              >
-                <option value="Size">Store Floor Size (sq. ft.)</option>
-                <option value="Type">Store Format Type (A, B, C)</option>
-                <option value="IsHoliday">IsHoliday Indicator (0 vs 1)</option>
-                <option value="Week">ISO Calendar Week of Year</option>
-              </select>
-            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+              Detailed dataset partitions, column-level data dictionaries, 5-step ETL transformation pipelines, and the complete 19-variable feature catalogue are accessible in the interactive <strong>Data Studio</strong>.
+            </p>
           </div>
 
-          {/* Interactive Profile Visualization in Shades of Grey */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
-            <div className="lg:col-span-3 space-y-3">
-              {selectedFeatureProfile === "Size" && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs tabular-nums">
-                    <span className="text-zinc-700 dark:text-zinc-300">Small Stores (&lt;70k sq. ft.)</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$9,519 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "35%" }} />
-                  </div>
-
-                  <div className="flex justify-between text-xs tabular-nums pt-2">
-                    <span className="text-zinc-700 dark:text-zinc-300">Medium Stores (70k–140k sq. ft.)</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$12,237 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-600 dark:bg-zinc-400 h-3 rounded-full" style={{ width: "55%" }} />
-                  </div>
-
-                  <div className="flex justify-between text-xs tabular-nums pt-2">
-                    <span className="text-zinc-950 dark:text-white font-semibold">Supercenters (&gt;140k sq. ft.)</span>
-                    <span className="font-bold text-zinc-950 dark:text-white">$20,099 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "90%" }} />
-                  </div>
-                </div>
-              )}
-
-              {selectedFeatureProfile === "Type" && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs tabular-nums">
-                    <span className="text-zinc-950 dark:text-white font-semibold">Type A (22 stores, 64.3% revenue)</span>
-                    <span className="font-bold text-zinc-950 dark:text-white">$20,099 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "88%" }} />
-                  </div>
-
-                  <div className="flex justify-between text-xs tabular-nums pt-2">
-                    <span className="text-zinc-700 dark:text-zinc-300">Type B (17 stores, 29.7% revenue)</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$12,237 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-600 dark:bg-zinc-400 h-3 rounded-full" style={{ width: "52%" }} />
-                  </div>
-
-                  <div className="flex justify-between text-xs tabular-nums pt-2">
-                    <span className="text-zinc-700 dark:text-zinc-300">Type C (6 small format stores, 6.0% revenue)</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$9,519 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "38%" }} />
-                  </div>
-                </div>
-              )}
-
-              {selectedFeatureProfile === "IsHoliday" && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs tabular-nums">
-                    <span className="text-zinc-700 dark:text-zinc-300">Regular Non-Holiday Weeks (92.96% of data)</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$15,901 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "65%" }} />
-                  </div>
-
-                  <div className="flex justify-between text-xs tabular-nums pt-2">
-                    <span className="text-zinc-950 dark:text-white font-semibold">Holiday Weeks (7.04% of data, 5x penalty weight)</span>
-                    <span className="font-bold text-zinc-950 dark:text-white">$17,035 mean</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
-                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "75%" }} />
-                  </div>
-                </div>
-              )}
-
-              {selectedFeatureProfile === "Week" && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs tabular-nums">
-                    <span className="text-zinc-700 dark:text-zinc-300">Average Regular Week</span>
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$15,400</span>
-                  </div>
-                  <div className="flex justify-between text-xs tabular-nums pt-1">
-                    <span className="text-zinc-800 dark:text-zinc-200">Week 47 (Thanksgiving Surge)</span>
-                    <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">$22,400 (+45%)</span>
-                  </div>
-                  <div className="flex justify-between text-xs tabular-nums pt-1">
-                    <span className="text-zinc-950 dark:text-white font-bold">Week 51 (Pre-Christmas Highest Annual Peak)</span>
-                    <span className="font-bold text-red-600 dark:text-red-400 tabular-nums">$27,800 (+81%)</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Cliff cards */}
-            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs space-y-2">
-              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider block">
-                Signal Cliff Callout
-              </span>
-              <p className="text-zinc-600 dark:text-zinc-400">
-                Notice the steep non-linear cliff at <strong className="text-zinc-950 dark:text-white">140,000 sq. ft.</strong>: stores above this threshold
-                drive double the departmental throughput due to Supercenter grocery footfall.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Full Sortable Feature Catalogue */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider">
-                Feature Catalogue
-              </span>
-              <h4 className="text-base font-bold text-zinc-900 dark:text-white">
-                Top Features Sorted by Relative Gain
-              </h4>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Domain filter pills */}
-              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg text-xs">
-                {["ALL", "A", "B", "C", "D", "E"].map((dom) => (
-                  <button
-                    key={dom}
-                    onClick={() => setActiveDomainFilter(dom)}
-                    className={`px-2.5 py-1 rounded-md font-medium transition ${
-                      activeDomainFilter === dom
-                        ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 shadow-xs font-bold border border-slate-700/60 dark:border-zinc-700"
-                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
-                    }`}
-                  >
-                    {dom === "ALL" ? "All Domains" : `Dom ${dom}`}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search input */}
-              <input
-                type="text"
-                placeholder="Search feature..."
-                value={featureSearch}
-                onChange={(e) => setFeatureSearch(e.target.value)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs tabular-nums">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
-                  <th className="py-2.5 px-3">Feature Name</th>
-                  <th className="py-2.5 px-3">Domain</th>
-                  <th className="py-2.5 px-3">Missing %</th>
-                  <th className="py-2.5 px-3">Unique</th>
-                  <th className="py-2.5 px-3">Median</th>
-                  <th className="py-2.5 px-3">Gain %</th>
-                  <th className="py-2.5 px-3">Corr (r)</th>
-                  <th className="py-2.5 px-3 font-normal">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                {filteredFeatures.map((f, idx) => {
-                  const shade = getDomainShade(f.domain);
-                  return (
-                    <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                      <td className="py-2.5 px-3 font-bold text-zinc-900 dark:text-zinc-100">{f.name}</td>
-                      <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${shade.tag}`}>
-                          Domain {f.domain}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-zinc-500 dark:text-zinc-400">{f.missing_pct}%</td>
-                      <td className="py-2.5 px-3 text-zinc-700 dark:text-zinc-300">{f.unique.toLocaleString()}</td>
-                      <td className="py-2.5 px-3 font-semibold">{f.median.toLocaleString()}</td>
-                      <td className="py-2.5 px-3 text-zinc-950 dark:text-white font-bold">
-                        {(f.importance_gain * 100).toFixed(1)}%
-                      </td>
-                      <td
-                        className={`py-2.5 px-3 font-bold tabular-nums ${
-                          f.univariate_corr > 0.3
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : f.univariate_corr < -0.05
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-zinc-600 dark:text-zinc-400 font-medium"
-                        }`}
-                      >
-                        {f.univariate_corr > 0 ? `+${f.univariate_corr.toFixed(3)}` : f.univariate_corr.toFixed(3)}
-                      </td>
-                      <td className="py-2.5 px-3 text-zinc-500 dark:text-zinc-400 max-w-xs truncate">{f.desc}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+            <Link
+              href="/studio#architecture"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition shadow-2xs"
+            >
+              Schema Dictionary &rarr;
+            </Link>
+            <Link
+              href="/studio#preprocessing"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition shadow-2xs"
+            >
+              ETL Scrubber &rarr;
+            </Link>
+            <Link
+              href="/studio#features"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-white dark:bg-zinc-700 dark:text-white hover:bg-slate-900 dark:hover:bg-zinc-600 transition shadow-xs"
+            >
+              Feature Signals &rarr;
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* 7. PREPROCESSING AUDIT & DECISION JUSTIFICATIONS */}
-      {/* ------------------------------------------------------------------ */}
-      <section id="preprocessing" className="space-y-5">
-        <div>
-          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Data Hygiene & ETL</h2>
-          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Preprocessing Pipeline & Decision Audit</h3>
-        </div>
-
-        {/* 5-Step Interactive ETL Pipeline Scrubber & Impact Graph */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-            {etlStepsData.map((s, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setActiveEtlStep(idx)}
-                className={`p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                  activeEtlStep === idx
-                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700 shadow-sm"
-                    : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 text-zinc-900 dark:text-zinc-100"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${activeEtlStep === idx ? "text-zinc-300 dark:text-zinc-400" : "text-zinc-500"}`}>
-                    Step {s.step}
-                  </span>
-                  {activeEtlStep === idx && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  )}
-                </div>
-                <h4 className="text-xs font-bold mt-1 truncate">{s.name}</h4>
-              </button>
-            ))}
-          </div>
-
-          {/* Interactive Step Detail Card with Metric Graph and Bullet Points */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  Step {etlStepsData[activeEtlStep].step} Architecture
-                </span>
-                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
-                  {etlStepsData[activeEtlStep].title}
-                </h4>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
-                Click any step above to inspect
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
-              {/* Dynamic Metric Bars for Active Step */}
-              <div className="space-y-3 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block mb-1">
-                  Quantified Impact Indicators
-                </span>
-                {etlStepsData[activeEtlStep].metrics.map((m, mIdx) => (
-                  <div key={mIdx} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-zinc-700 dark:text-zinc-300 font-medium">{m.label}</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">{m.value}</span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
-                          {m.tag}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 overflow-hidden flex">
-                      <div
-                        className="bg-slate-800 dark:bg-zinc-300 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(5, m.pct)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Structured Key Points */}
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                  Engineering Rationale &amp; Safeguards
-                </span>
-                <ul className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
-                  {etlStepsData[activeEtlStep].points.map((pt, pIdx) => (
-                    <li key={pIdx} className="flex items-start gap-2">
-                      <span className="text-slate-800 dark:text-zinc-200 font-bold mt-0.5">•</span>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Justification Cards - Structured with Bullet Points */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
-            <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider block">
-              DECISION 1: JOIN INTEGRITY
-            </span>
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why Left Join on Store + Date?</h4>
-            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">100% Row Retention:</strong> Zero row loss occurred across all 421,570 training records.</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Truncation Protection:</strong> Inner joins risked dropping unobserved store dates, causing evaluation drift.</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Test Alignment:</strong> Maintains exact contiguous sequence matching Kaggle evaluation rows.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
-            <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider block mb-1">
-              DECISION 2: ZERO-MARKDOWN IMPUTATION
-            </span>
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why 0.0 Instead of Mean Imputation?</h4>
-            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Physical Truth:</strong> Markdowns represent promotional discounts; missing logs reflect a real $0.00 discount.</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Anti-Hallucination:</strong> Mean imputation would falsely inject artificial discounts into 100% of 2010.</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Dual Signals:</strong> Created <code className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px]">Total_MarkDown</code> and <code className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px]">Has_MarkDown</code> flags.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
-            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider block mb-1">
-              DECISION 3: PRESERVING NEGATIVE SALES
-            </span>
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why Retain 1,285 Negative Rows?</h4>
-            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
-              <li className="flex items-start gap-1.5">
-                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Return Diagnostics:</strong> Negative values capture genuine customer merchandise returns (concentrated in Dept 47).</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Strict Honesty:</strong> Deleting negative returns fabricates optimistic bias and fails on unseen holdout returns.</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Tree Robustness:</strong> Tree split algorithms handle negative real targets without numerical divergence.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 8. MODEL EXPERIMENTS & LADDER BENCHMARK */}
+      {/* 6. MODEL EXPERIMENTS & LADDER BENCHMARK */}
       {/* ------------------------------------------------------------------ */}
       <section id="experiments" className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1204,8 +601,18 @@ export default function OverviewPage() {
             <h3 className="text-xl font-bold text-zinc-950 dark:text-white">The 8-Rung Model Ladder &amp; Interactive Benchmark Graph</h3>
           </div>
 
-          {/* Model Ladder Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/studio#inspector"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition shadow-2xs"
+            >
+              <TrendingUp size={13} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Inspect Series in Studio</span>
+              <ArrowRight size={13} />
+            </Link>
+
+            {/* Model Ladder Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
             {[
               { id: "all", label: "All 8 Models" },
               { id: "ml", label: "ML vs Baselines" },
@@ -1226,6 +633,7 @@ export default function OverviewPage() {
             ))}
           </div>
         </div>
+      </div>
 
         {/* Interactive Model Ladder Visual Graph */}
         <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
@@ -2257,70 +1665,346 @@ export default function OverviewPage() {
 
         <div className="p-6 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-6">
           <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-            To ensure complete academic transparency and technical auditability, this project is fully reproducible
-            from raw Kaggle CSVs using deterministic random seeds (<code className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-mono text-[11px]">SEED = 42</code>). Follow the audited protocol below:
+            To ensure complete academic transparency, strict scientific rigor, and technical auditability, this project is fully reproducible
+            from raw Kaggle CSVs using deterministic random seeds (<code className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-mono text-[11px]">SEED = 42</code>).
+            Supported natively across <strong>Windows</strong>, <strong>Linux</strong>, and <strong>macOS</strong>.
           </p>
 
+          {/* System Requirements & Integrity Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
               <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
-                System Requirements
+                System & OS Requirements
               </span>
               <ul className="text-xs text-zinc-700 dark:text-zinc-300 space-y-1 list-disc pl-4">
-                <li>Python 3.10+ (Verified on Python 3.14.7 x64)</li>
-                <li>Node.js 18+ (Verified on Node v22.13.1)</li>
-                <li>RAM: &ge; 8 GB recommended for CatBoost & RF memory footprints</li>
-                <li>Disk Space: ~250 MB for parquet partitions and checkpoints</li>
+                <li><strong>Python:</strong> 3.10+ (Verified on Python 3.10, 3.11, 3.12, 3.14 x64/arm64)</li>
+                <li><strong>Node.js:</strong> 18+ (Verified on Node v18, v20 LTS, v22)</li>
+                <li><strong>Hardware:</strong> &ge; 8 GB RAM (for 100-tree RF & CatBoost RAM footprints)</li>
+                <li><strong>Disk:</strong> ~250 MB (Raw CSVs, parquet partitions, model weights)</li>
+                <li><strong>Toolchains:</strong> Git, Unzip / PowerShell, OpenMP (<code className="text-[11px] font-mono">libomp</code> on macOS, <code className="text-[11px] font-mono">libgomp1</code> on Linux)</li>
               </ul>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
               <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
-                Dataset Integrity & Checksums
+                Dataset Integrity & Ground Truth Checksums
               </span>
-              <ul className="text-xs text-zinc-700 dark:text-zinc-300 space-y-1 list-disc pl-4">
-                <li><code className="font-mono">train.csv</code>: 421,570 rows (13.7 MB)</li>
-                <li><code className="font-mono">features.csv</code>: 8,190 rows (0.58 MB)</li>
-                <li><code className="font-mono">stores.csv</code>: 45 rows (0.001 MB)</li>
-                <li><code className="font-mono">test.csv</code>: 115,064 rows (3.8 MB)</li>
+              <ul className="text-xs text-zinc-700 dark:text-zinc-300 space-y-1 list-disc pl-4 font-mono">
+                <li><strong>train.csv:</strong> 421,570 rows (~12.8 MB) — 45 stores, 81 depts</li>
+                <li><strong>features.csv:</strong> 8,190 rows (~0.59 MB) — CPI, Fuel, Markdowns</li>
+                <li><strong>stores.csv:</strong> 45 rows (~532 bytes) — Store Format Type & Size</li>
+                <li><strong>test.csv:</strong> 115,064 rows (~2.60 MB) — Unlabeled Kaggle test set</li>
               </ul>
+              <div className="pt-1">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  Verified with automated checksum checker: <code className="font-mono text-[10px]">python download_dataset.py --check</code>
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Code Execution Stepper */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <Terminal size={14} className="text-emerald-600 dark:text-emerald-400" />
-              <span>Step-by-Step Terminal Execution</span>
-            </h4>
+          {/* Alternate Dataset Download Options */}
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Download size={14} className="text-blue-600 dark:text-blue-400" />
+                <span>Dataset Acquisition Options (Choose Preferred Method)</span>
+              </h4>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                Alternative options when Kaggle CLI is not configured
+              </span>
+            </div>
 
-            <div className="p-4 rounded-xl bg-zinc-950 dark:bg-black text-zinc-100 font-mono text-xs overflow-x-auto space-y-3 border border-zinc-800">
-              <div>
-                <span className="text-zinc-500 select-none"># 1. Clone repository, setup environment, and download data</span>
-                <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git</div>
-                <div className="text-zinc-200 select-all">cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department && python -m venv venv</div>
-                <div className="text-zinc-200 select-all">.\venv\Scripts\activate  <span className="text-zinc-500"># On Linux/macOS: source venv/bin/activate</span></div>
-                <div className="text-zinc-200 select-all">pip install -r requirements.txt</div>
-                <div className="text-emerald-400 select-all">kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/</div>
+            {/* Option Pills */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedDownloadOpt("script")}
+                className={`px-3 py-2 text-xs font-medium rounded-lg text-left transition-all border ${
+                  selectedDownloadOpt === "script"
+                    ? "bg-blue-50 dark:bg-blue-950/50 border-blue-500/50 text-blue-700 dark:text-blue-300 font-semibold shadow-xs"
+                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="text-[10px] uppercase tracking-wider opacity-75">Option 1 (Recommended)</div>
+                <div className="truncate">Automated Python Script</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDownloadOpt("kaggle_cli")}
+                className={`px-3 py-2 text-xs font-medium rounded-lg text-left transition-all border ${
+                  selectedDownloadOpt === "kaggle_cli"
+                    ? "bg-blue-50 dark:bg-blue-950/50 border-blue-500/50 text-blue-700 dark:text-blue-300 font-semibold shadow-xs"
+                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="text-[10px] uppercase tracking-wider opacity-75">Option 2 (Official)</div>
+                <div className="truncate">Kaggle CLI & Token</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDownloadOpt("manual_browser")}
+                className={`px-3 py-2 text-xs font-medium rounded-lg text-left transition-all border ${
+                  selectedDownloadOpt === "manual_browser"
+                    ? "bg-blue-50 dark:bg-blue-950/50 border-blue-500/50 text-blue-700 dark:text-blue-300 font-semibold shadow-xs"
+                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="text-[10px] uppercase tracking-wider opacity-75">Option 3 (No Token)</div>
+                <div className="truncate">Direct Web Download</div>
+              </button>
+            </div>
+
+            {/* Option Details Card */}
+            <div className="p-4 rounded-xl bg-zinc-900 dark:bg-black text-zinc-200 text-xs font-mono border border-zinc-800 space-y-2">
+              {selectedDownloadOpt === "script" && (
+                <div>
+                  <div className="text-zinc-400 mb-1 flex items-center justify-between">
+                    <span># Zero-configuration script: auto-extracts nested archives, invokes Kaggle API if present, or validates existing files</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCode("dl-script", "python download_dataset.py\npython download_dataset.py --check")}
+                      className="text-zinc-400 hover:text-white flex items-center gap-1 font-sans text-[11px]"
+                    >
+                      {copiedCodeKey === "dl-script" ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      {copiedCodeKey === "dl-script" ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <div className="text-emerald-400 select-all">python download_dataset.py</div>
+                  <div className="text-zinc-300 select-all">python download_dataset.py --check</div>
+                  <div className="text-zinc-500 text-[11px] pt-1 font-sans">
+                    Handles recursive extraction of nested archives (e.g., <code className="text-zinc-400">train.csv.zip</code>, <code className="text-zinc-400">features.csv.zip</code>) and verifies row counts automatically.
+                  </div>
+                </div>
+              )}
+
+              {selectedDownloadOpt === "kaggle_cli" && (
+                <div>
+                  <div className="text-zinc-400 mb-1 flex items-center justify-between">
+                    <span># Official Kaggle CLI (Requires ~/.kaggle/kaggle.json or %USERPROFILE%\.kaggle\kaggle.json)</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCode("dl-cli", "kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/\npython download_dataset.py --extract-only")}
+                      className="text-zinc-400 hover:text-white flex items-center gap-1 font-sans text-[11px]"
+                    >
+                      {copiedCodeKey === "dl-cli" ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      {copiedCodeKey === "dl-cli" ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <div className="text-emerald-400 select-all">kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/</div>
+                  <div className="text-zinc-300 select-all">python download_dataset.py --extract-only</div>
+                  <div className="text-zinc-500 text-[11px] pt-1 font-sans">
+                    Make sure you have clicked &quot;Late Submission&quot; or &quot;I Understand and Accept&quot; on the Kaggle competition page before running, otherwise Kaggle returns 403 Forbidden.
+                  </div>
+                </div>
+              )}
+
+              {selectedDownloadOpt === "manual_browser" && (
+                <div>
+                  <div className="text-zinc-400 mb-1 flex items-center justify-between">
+                    <span># 100% credential-free direct download via web browser</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCode("dl-manual", "python download_dataset.py --extract-only\npython download_dataset.py --check")}
+                      className="text-zinc-400 hover:text-white flex items-center gap-1 font-sans text-[11px]"
+                    >
+                      {copiedCodeKey === "dl-manual" ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      {copiedCodeKey === "dl-manual" ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <div className="text-zinc-400 font-sans leading-relaxed">
+                    1. Navigate to: <a href="https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline inline-flex items-center gap-1">https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data <ExternalLink size={11} /></a><br />
+                    2. Click <strong>&quot;Download All&quot;</strong> to get <code className="text-zinc-200">walmart-recruiting-store-sales-forecasting.zip</code> (~15 MB).<br />
+                    3. Place the downloaded ZIP file directly inside this project&apos;s <code className="text-emerald-400">data/</code> directory.<br />
+                    4. Run the helper to unpack and verify:
+                  </div>
+                  <div className="text-emerald-400 select-all pt-1">python download_dataset.py --extract-only</div>
+                  <div className="text-zinc-300 select-all">python download_dataset.py --check</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* OS-Specific Execution Stepper */}
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Terminal size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Operating System Execution Protocols</span>
+              </h4>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                Switch OS for tailored shell commands &amp; launch scripts
+              </span>
+            </div>
+
+            {/* OS Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedReproOs("windows")}
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${
+                  selectedReproOs === "windows"
+                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-semibold shadow-xs"
+                    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <Laptop size={13} />
+                <span>Windows (PowerShell / CMD)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedReproOs("linux")}
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${
+                  selectedReproOs === "linux"
+                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-semibold shadow-xs"
+                    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <Server size={13} />
+                <span>Linux (Ubuntu / Debian / RHEL)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedReproOs("macos")}
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${
+                  selectedReproOs === "macos"
+                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-semibold shadow-xs"
+                    : "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <Laptop size={13} />
+                <span>macOS (Apple Silicon &amp; Intel)</span>
+              </button>
+            </div>
+
+            {/* Shell Code Display */}
+            <div className="p-4 rounded-xl bg-zinc-950 dark:bg-black text-zinc-100 font-mono text-xs overflow-x-auto space-y-4 border border-zinc-800 relative">
+              {/* Copy Full OS Script Button */}
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span className="text-[11px] text-zinc-400">
+                  Target: {selectedReproOs === "windows" ? "PowerShell 5.1 / 7+" : selectedReproOs === "linux" ? "Bash / Sh (Linux)" : "Zsh / Bash (macOS)"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    let cmdText = "";
+                    if (selectedReproOs === "windows") {
+                      cmdText = `git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git\ncd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department\npython -m venv venv\n.\\venv\\Scripts\\Activate.ps1\npip install -r requirements.txt\npython download_dataset.py\npython training_pipeline.py\npython build_models_and_predictions.py\npython generate_results_json.py\n.\\run_portal.bat`;
+                    } else if (selectedReproOs === "linux") {
+                      cmdText = `sudo apt update && sudo apt install -y python3-venv python3-pip build-essential libgomp1 unzip\ngit clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git\ncd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department\npython3 -m venv venv\nsource venv/bin/activate\npip install -r requirements.txt\npython3 download_dataset.py\npython3 training_pipeline.py\npython3 build_models_and_predictions.py\npython3 generate_results_json.py\nchmod +x run_portal.sh\n./run_portal.sh`;
+                    } else {
+                      cmdText = `brew install python@3.11 node libomp unzip\ngit clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git\ncd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department\npython3 -m venv venv\nsource venv/bin/activate\npip install -r requirements.txt\npython3 download_dataset.py\npython3 training_pipeline.py\npython3 build_models_and_predictions.py\npython3 generate_results_json.py\nchmod +x run_portal.sh\n./run_portal.sh`;
+                    }
+                    handleCopyCode(`full-${selectedReproOs}`, cmdText);
+                  }}
+                  className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center gap-1 text-[11px] font-sans"
+                >
+                  {copiedCodeKey === `full-${selectedReproOs}` ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                  <span>{copiedCodeKey === `full-${selectedReproOs}` ? "All Copied!" : "Copy All Commands"}</span>
+                </button>
               </div>
 
-              <div className="pt-2 border-t border-zinc-800">
-                <span className="text-zinc-500 select-none"># 2. Run deterministic ML pipeline (generates models and holdout parquet)</span>
-                <div className="text-emerald-400 select-all">python training_pipeline.py</div>
-                <span className="text-zinc-500 text-[11px]"># Fits 8-rung ladder, fits Optuna champion XGBoost, outputs metrics_summary.json</span>
-              </div>
+              {/* WINDOWS SCRIPT */}
+              {selectedReproOs === "windows" && (
+                <>
+                  <div>
+                    <span className="text-zinc-500 select-none"># 1. Clone repository &amp; activate virtual environment</span>
+                    <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git</div>
+                    <div className="text-zinc-200 select-all">cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department</div>
+                    <div className="text-zinc-200 select-all">python -m venv venv</div>
+                    <div className="text-zinc-200 select-all">.\venv\Scripts\Activate.ps1  <span className="text-zinc-500"># In CMD: venv\Scripts\activate.bat</span></div>
+                    <div className="text-zinc-500 text-[11px]"># If PowerShell execution policy restricts scripts: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass</div>
+                    <div className="text-zinc-200 select-all">pip install -r requirements.txt</div>
+                  </div>
 
-              <div className="pt-2 border-t border-zinc-800">
-                <span className="text-zinc-500 select-none"># 3. Synchronize single-source-of-truth portal data and start model server</span>
-                <div className="text-zinc-200 select-all">python generate_results_json.py</div>
-                <div className="text-zinc-200 select-all">python model_server.py  <span className="text-zinc-500"># Runs local inference API on port 5001</span></div>
-              </div>
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 2. Ingest &amp; unpack dataset (uses selected method)</span>
+                    <div className="text-emerald-400 select-all">python download_dataset.py</div>
+                    <div className="text-zinc-300 select-all">python download_dataset.py --check</div>
+                  </div>
 
-              <div className="pt-2 border-t border-zinc-800">
-                <span className="text-zinc-500 select-none"># 4. Launch Next.js interactive research portal</span>
-                <div className="text-zinc-200 select-all">cd portal && npm install</div>
-                <div className="text-zinc-200 select-all">npm run build && npm start  <span className="text-zinc-500"># Access live on http://localhost:3000</span></div>
-              </div>
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 3. Execute deterministic ML pipeline &amp; generate predictions</span>
+                    <div className="text-emerald-400 select-all">python training_pipeline.py</div>
+                    <div className="text-zinc-200 select-all">python build_models_and_predictions.py</div>
+                    <div className="text-zinc-200 select-all">python generate_results_json.py</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 4. Launch Model Server &amp; Next.js Portal (Unified Launcher)</span>
+                    <div className="text-emerald-400 select-all">.\run_portal.bat  <span className="text-zinc-500"># Runs background Python model server on :5001 &amp; Next.js portal on :3000</span></div>
+                  </div>
+                </>
+              )}
+
+              {/* LINUX SCRIPT */}
+              {selectedReproOs === "linux" && (
+                <>
+                  <div>
+                    <span className="text-zinc-500 select-none"># 1. Install prerequisites (Debian/Ubuntu) &amp; clone</span>
+                    <div className="text-zinc-200 select-all">sudo apt update &amp;&amp; sudo apt install -y python3-venv python3-pip build-essential libgomp1 unzip nodejs npm</div>
+                    <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git</div>
+                    <div className="text-zinc-200 select-all">cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department</div>
+                    <div className="text-zinc-200 select-all">python3 -m venv venv &amp;&amp; source venv/bin/activate</div>
+                    <div className="text-zinc-200 select-all">pip install --upgrade pip &amp;&amp; pip install -r requirements.txt</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 2. Ingest dataset &amp; verify integrity</span>
+                    <div className="text-emerald-400 select-all">python3 download_dataset.py</div>
+                    <div className="text-zinc-300 select-all">python3 download_dataset.py --check</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 3. Train models &amp; compile single-source portal results</span>
+                    <div className="text-emerald-400 select-all">python3 training_pipeline.py</div>
+                    <div className="text-zinc-200 select-all">python3 build_models_and_predictions.py</div>
+                    <div className="text-zinc-200 select-all">python3 generate_results_json.py</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 4. Launch unified Model Server &amp; Next.js Portal</span>
+                    <div className="text-emerald-400 select-all">chmod +x run_portal.sh &amp;&amp; ./run_portal.sh</div>
+                    <span className="text-zinc-500 text-[11px]"># Automatically starts model_server.py (5001) in background with graceful SIGINT cleanup</span>
+                  </div>
+                </>
+              )}
+
+              {/* MACOS SCRIPT */}
+              {selectedReproOs === "macos" && (
+                <>
+                  <div>
+                    <span className="text-zinc-500 select-none"># 1. Install prerequisites via Homebrew (libomp is required for XGBoost/LightGBM)</span>
+                    <div className="text-zinc-200 select-all">brew install python@3.11 node libomp unzip</div>
+                    <div className="text-zinc-200 select-all">git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git</div>
+                    <div className="text-zinc-200 select-all">cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department</div>
+                    <div className="text-zinc-200 select-all">python3 -m venv venv &amp;&amp; source venv/bin/activate</div>
+                    <div className="text-zinc-200 select-all">pip install --upgrade pip &amp;&amp; pip install -r requirements.txt</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 2. Ingest dataset &amp; verify integrity</span>
+                    <div className="text-emerald-400 select-all">python3 download_dataset.py</div>
+                    <div className="text-zinc-300 select-all">python3 download_dataset.py --check</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 3. Train models &amp; compile single-source portal results</span>
+                    <div className="text-emerald-400 select-all">python3 training_pipeline.py</div>
+                    <div className="text-zinc-200 select-all">python3 build_models_and_predictions.py</div>
+                    <div className="text-zinc-200 select-all">python3 generate_results_json.py</div>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 select-none"># 4. Launch unified Model Server &amp; Next.js Portal</span>
+                    <div className="text-emerald-400 select-all">chmod +x run_portal.sh &amp;&amp; ./run_portal.sh</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

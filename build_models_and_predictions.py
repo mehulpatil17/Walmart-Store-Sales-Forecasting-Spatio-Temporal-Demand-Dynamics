@@ -35,8 +35,10 @@ def compute_metrics(y_true, y_pred, is_holiday):
 print("=== EXECUTING PHASES 3, 4, 5 ===")
 data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 stores = pd.read_csv(os.path.join(data_dir, "stores.csv"))
-features = pd.read_csv(os.path.join(data_dir, "features.csv", "features.csv"))
-train = pd.read_csv(os.path.join(data_dir, "train.csv", "train.csv"))
+features_path = os.path.join(data_dir, "features.csv", "features.csv") if os.path.isdir(os.path.join(data_dir, "features.csv")) else os.path.join(data_dir, "features.csv")
+train_path = os.path.join(data_dir, "train.csv", "train.csv") if os.path.isdir(os.path.join(data_dir, "train.csv")) else os.path.join(data_dir, "train.csv")
+features = pd.read_csv(features_path)
+train = pd.read_csv(train_path)
 
 # Preprocessing
 features_clean = features.copy()

@@ -22,7 +22,7 @@ All models were evaluated on the competition-standard **Weighted Mean Absolute E
 - **Validation Holdout:** 115,588 records across 39 contiguous weeks (~9 calendar months).
 - **Official Test Set:** 115,064 records across 39 contiguous weeks (kept completely untouched during model training and hyperparameter search).
 - **Strict Leakage Prevention:**
-  1. Historical target encodings (`dept_mean`, `dept_median`, `store_mean`, `store_median`, `sd_mean`, `sd_median`, `dw_median`) were computed **strictly inside the training partition**.
+  1. Historical group medians (`dept_median`, `store_median`, `sd_median`, `dw_median`) were computed **strictly inside the training partition**.
   2. Imputation statistics for macroeconomic variables (`CPI` and `Unemployment`) were fitted on training data and forward-filled chronologically.
   3. No random K-Fold cross-validation was used, completely eliminating future-to-past lookahead leakage.
 
@@ -41,12 +41,9 @@ The following experimental results were recorded across all evaluated candidate 
 | Model Architecture | Model Family | Train WMAE ($) | Val WMAE ($) | Generalization Gap ($) | Val MAE ($) | Val RMSE ($) | Val $R^2$ | Train Time (s) | Infer Time (s) | Diagnostic Status |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Store-Dept Median Baseline** | Heuristic Baseline | 2,184.15 | 2,423.62 | +239.47 | 2,352.97 | 4,682.10 | 0.9512 | 0.05 | 0.02 | Baseline Reference |
-| **Ridge Regression** | Regularized Linear | 2,406.23 | 2,506.24 | **+100.01** | 2,483.67 | 4,561.80 | 0.9577 | **1.63** | 0.43 | Severe Underfitting (High Bias) |
-| **CatBoost Regressor** | Oblivious Trees | 1,486.99 | 1,841.93 | +354.94 | 1,821.98 | 3,833.50 | 0.9701 | 19.65 | **0.05** | Moderate Underfitting |
-| **Random Forest Regressor** | Bagged Trees | 1,257.07 | 1,730.04 | +472.97 | 1,718.29 | 3,526.26 | 0.9747 | 51.83 | 0.33 | Well Regularized |
-| **LightGBM Regressor** | Leaf-wise GBDT | 1,158.55 | 1,736.87 | +578.31 | 1,723.84 | 3,699.59 | 0.9721 | 85.97 | 2.25 | Strong Candidate |
-| **XGBoost (Default)** | Depth-wise GBDT | 1,047.66 | 1,692.80 | +645.14 | 1,685.12 | 3,536.54 | 0.9746 | 13.65 | 0.60 | Top Baseline Candidate |
-| **XGBoost (Optuna Tuned)** | Depth-wise GBDT | **882.24** | **1,616.78** | +734.54 | **1,606.97** | **3,399.11** | **0.9765** | 16.75 | 0.47 | **Selected Optimal Model** |
+| **Ridge Regression** | Regularized Linear ($L_2$) | 2,406.23 | 2,506.24 | **+100.01** | 2,483.67 | 4,561.80 | 0.9577 | **1.63** | 0.43 | Severe Underfitting (High Bias) |
+| **Random Forest Regressor** | Bagged Trees Ensemble | 1,257.07 | 1,730.04 | +472.97 | 1,718.29 | 3,526.26 | 0.9747 | 51.83 | 0.33 | Well Regularized (Low Variance) |
+| **Tuned XGBoost Regressor** | Gradient Boosted Trees | **882.24** | **1,616.78** | +734.54 | **1,606.97** | **3,399.11** | **0.9765** | 16.75 | 0.47 | **Selected Optimal Model** |
 
 ---
 
@@ -57,24 +54,16 @@ The following experimental results were recorded across all evaluated candidate 
 - **Generalization Gap:** Minimal ($\$100.01$), which in naive analysis might appear desirable.
 - **Root Cause:** A linear hyperplane cannot model the multiplicative interactions between store type, store size, and seasonal departmental surges. For instance, Dept 72 (Electronics/Toys) experiences a $30\times$ sales multiplier during Thanksgiving (Week 47), whereas Dept 47 experiences zero lift. Linear models suffer from **high structural bias**, underfitting both training and validation sets.
 
-### 3.2 CatBoost Regressor: Moderate Inductive Bias
-- **Diagnostic Metrics:** Train WMAE of $\$1,486.99$, Val WMAE of $\$1,841.93$.
-- **Root Cause:** CatBoost relies on **oblivious (symmetric) decision trees**, where every node at the same tree depth uses the exact same split criterion. While this symmetry acts as an inductive regularizer against overfitting, it restricts the tree from growing highly asymmetric, specialized sub-trees for individual outlier departments. Consequently, CatBoost underperformed both Random Forest and XGBoost on holiday spikes.
-
-### 3.3 Random Forest: Robust Bagged Variance Reduction
+### 3.2 Random Forest: Robust Bagged Variance Reduction
 - **Diagnostic Metrics:** Train WMAE of $\$1,257.07$, Val WMAE of $\$1,730.04$, Val RMSE of $\$3,526.26$.
-- **Analysis:** Random Forest performed remarkably well without sequential boosting. Its parallel bagging mechanism and feature subsampling ($max\_features = 0.8$) prevented the ensemble from over-indexing on extreme outlier returns (negative sales). Its training time was higher (51.8s) due to constructing 100 deep trees without histogram binning.
+- **Analysis:** Random Forest performed remarkably well without sequential boosting. Its parallel bagging mechanism and feature subsampling ($max\_features = 0.8$) prevented the ensemble from over-indexing on extreme outlier returns (negative sales). Its training time was higher (51.8s) due to constructing 100 deep trees.
 
-### 3.4 LightGBM Regressor: Competitive Leaf-Wise Growth
-- **Diagnostic Metrics:** Train WMAE of $\$1,158.55$, Val WMAE of $\$1,736.87$.
-- **Analysis:** LightGBM converged quickly and performed competitively. However, with `regression_l1` objective and leaf-wise splitting up to 127 leaves, it exhibited slightly higher validation variance across holiday transitions compared to XGBoost's depth-wise quantile splitting.
-
-### 3.5 XGBoost (Optuna Tuned): The Optimal Operating Frontier
+### 3.3 Tuned XGBoost: The Optimal Operating Frontier
 - **Diagnostic Metrics:** Train WMAE of $\$882.24$, Val WMAE of **$\$1,616.78$**, Val RMSE of **$\$3,399.11$**, $R^2 = 0.9765$.
 - **Analysis of Generalization Gap:** The generalization gap of $\$734.54$ is natural and expected in multi-entity time-series forecasting across 3,331 time series over an unseen 39-week future horizon. The model's validation loss remained strictly monotonic and stable without divergence across 1,000 boosting iterations.
 - **Why It Won:**
   1. Second-order Taylor expansion of the weighted absolute loss allowed exact Hessian-guided tree pruning.
-  2. The hyperparameter optimization correctly discovered a high `min_child_weight` (12) combined with L1 leaf regularization (`reg_alpha = 0.4018`) and feature subsampling (`colsample_bytree = 0.7082`), effectively preventing the model from memorizing historical noise while capturing the steep holiday peaks.
+  2. Validation holdout tuning identified an effective `min_child_weight` (12) combined with L1 leaf regularization (`reg_alpha = 0.4018`), L2 leaf regularization (`reg_lambda = 1.8720`), and feature subsampling (`colsample_bytree = 0.7082`), preventing the model from memorizing historical noise while accurately capturing holiday peaks.
 
 ---
 

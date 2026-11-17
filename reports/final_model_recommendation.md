@@ -11,13 +11,13 @@
 
 ## Executive Recommendation
 
-Following rigorous exploratory data analysis, leak-free chronological partitioning, multi-model benchmarking, and Bayesian hyperparameter optimization, the **Tuned XGBoost Regressor (`objective='reg:absoluteerror'`)** is selected as the optimal production architecture for Walmart Store Sales Forecasting.
+Following rigorous exploratory data analysis, leak-free chronological partitioning, multi-model benchmarking, and systematic hyperparameter tuning, the **Tuned XGBoost Regressor (`objective='reg:absoluteerror'`)** is selected as the optimal production architecture for Walmart Store Sales Forecasting.
 
 ### Summary Scorecard
 
 | Evaluation Dimension | Metric / Assessment | Evidence & Operational Impact |
 |---|---|---|
-| **Validation Performance** | **WMAE: \$1,616.78** | **Best in Benchmark:** Outperformed baseline by $\$806.84$ (-33.3% error) and CatBoost by $\$225.15$ (-12.2% error). |
+| **Validation Performance** | **WMAE: \$1,616.78** | **Best in Benchmark:** Outperformed baseline by $\$806.84$ (-33.3% error) and Random Forest by $\$113.26$ (-6.5% error). |
 | **Variance Explained** | **$R^2 = 0.9765$** | Captures 97.65% of the total variance in weekly retail sales across 3,331 distinct store-department time series. |
 | **Root Mean Squared Error** | **RMSE: \$3,399.11** | Lowest RMSE among all candidates, demonstrating superior resilience against extreme holiday outlier spikes. |
 | **Training Efficiency** | **16.75 seconds** | Full training on 305,982 records takes under 17 seconds on CPU; enables fast daily or weekly retraining pipelines. |
@@ -34,15 +34,12 @@ No machine learning model is guaranteed to avoid overfitting or underfitting. Ra
 1. **Why not Ridge Regression?**
    - *Empirical Result:* Val WMAE of $\$2,506.24$ ($R^2 = 0.9577$).
    - *Failure Mode:* Severe underfitting (high structural bias). Linear models cannot learn the multiplicative holiday interaction coefficients across departments without combinatorial feature explosion.
-2. **Why not CatBoost?**
-   - *Empirical Result:* Val WMAE of $\$1,841.93$ ($R^2 = 0.9701$).
-   - *Failure Mode:* CatBoost's oblivious (symmetric) trees enforce identical split criteria across all leaves at each depth. This excessive structural regularity prevents the model from isolating localized departmental spikes (such as Dept 72 Thanksgiving surges).
-3. **Why not Random Forest?**
+2. **Why not Random Forest?**
    - *Empirical Result:* Val WMAE of $\$1,730.04$ ($R^2 = 0.9747$).
    - *Assessment:* Robust, well-regularized ensemble. However, training time was $3.1\times$ slower (51.8s) than XGBoost, and validation error was $\$113.26$ higher due to lack of sequential residual gradient refinement.
-4. **Why not LightGBM?**
-   - *Empirical Result:* Val WMAE of $\$1,736.87$ ($R^2 = 0.9721$).
-   - *Assessment:* Extremely competitive. However, leaf-wise growth on weighted absolute error loss exhibited slightly higher validation variance on non-holiday weeks compared to XGBoost's depth-wise quantile sketching.
+3. **Why Tuned XGBoost?**
+   - *Empirical Result:* Val WMAE of $\$1,616.78$ ($R^2 = 0.9765$).
+   - *Assessment:* Sequential boosting with second-order Taylor expansion (gradients and Hessians) with tree leaf regularization (`reg_alpha` and `reg_lambda`) yields superior predictive accuracy and outlier resilience.
 
 ---
 
@@ -73,7 +70,7 @@ final_model = xgb.XGBRegressor(
 ### Preprocessing & Training Protocol
 - **Sample Weights:** $w_i = 5.0$ if `IsHoliday == 1`, else $w_i = 1.0$.
 - **Macroeconomic Imputation:** Per-store chronological forward fill followed by training set median fallback.
-- **Hierarchical Target Encodings:** Fitted strictly on training folds with 3-tier fallback for unseen series:
+- **Historical Group Medians:** Fitted strictly on training folds with 3-tier fallback for unseen series:
   $$\text{SD\_Median} \xrightarrow{\text{fallback}} \text{Dept\_Median} \xrightarrow{\text{fallback}} \text{Global\_Median}$$
 - **Calendar Surge Features:** ISO Week, Month, Day, Year, and specific binary retail surge flags (`Is_SuperBowl`, `Is_LaborDay`, `Is_Thanksgiving`, `Is_PreChristmas`, `Is_Christmas`).
 

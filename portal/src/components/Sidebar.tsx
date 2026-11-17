@@ -46,6 +46,69 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
     "DEPLOYMENT & DEFENSE": false,
   });
 
+  const [currentSection, setCurrentSection] = useState<string>(activeSection);
+
+  // Sync scroll spy and hash with current visible section
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      setCurrentSection(window.location.hash.slice(1));
+    } else if (pathname === "/studio" || pathname === "/studio/") {
+      setCurrentSection("studio");
+    } else if (pathname === "/") {
+      setCurrentSection("hero");
+    }
+
+    const handleHashChange = () => {
+      if (typeof window !== "undefined" && window.location.hash) {
+        setCurrentSection(window.location.hash.slice(1));
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+
+    const sectionIds = pathname.startsWith("/studio")
+      ? ["architecture", "preprocessing", "features", "overlap", "inspector", "deep-dives", "explorer"]
+      : pathname === "/"
+      ? [
+          "hero",
+          "rq",
+          "findings",
+          "kpis",
+          "validation",
+          "experiments",
+          "diagnostics",
+          "error-analysis",
+          "conclusion",
+          "reproduction",
+          "disclosure"
+        ]
+      : [];
+
+    const elements: HTMLElement[] = [];
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) elements.push(el);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setCurrentSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-15% 0px -65% 0px" }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, [pathname]);
+
   // Close mobile drawer on route change
   useEffect(() => {
     setMobileOpen(false);
@@ -76,11 +139,9 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
         { name: "Research Question", href: "/#rq", icon: HelpCircle, sectionId: "rq" },
         { name: "Key Findings", href: "/#findings", icon: Sparkles, sectionId: "findings" },
         { name: "KPI Scorecard", href: "/#kpis", icon: BarChart3, sectionId: "kpis" },
-        { name: "Dataset Architecture", href: "/#architecture", icon: Layers, sectionId: "architecture" },
-        { name: "Feature Matrix & Signals", href: "/#features", icon: Table2, sectionId: "features" },
-        { name: "Preprocessing Audit", href: "/#preprocessing", icon: Sliders, sectionId: "preprocessing" },
         { name: "Leakage-Free Protocol", href: "/#validation", icon: ShieldCheck, sectionId: "validation" },
         { name: "Model Benchmark", href: "/#experiments", icon: TrendingUp, sectionId: "experiments" },
+        { name: "Decision Support", href: "/#diagnostics", icon: Sliders, sectionId: "diagnostics" },
         { name: "Error & Cost Analysis", href: "/#error-analysis", icon: AlertTriangle, sectionId: "error-analysis" },
         { name: "Conclusion & Takeaways", href: "/#conclusion", icon: CheckCircle2, sectionId: "conclusion" },
         { name: "Reproduction & Audit", href: "/#reproduction", icon: Terminal, sectionId: "reproduction" },
@@ -91,7 +152,9 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
       group: "DATA STUDIO",
       badge: "Deep Dives",
       items: [
-        { name: "Exploratory Studio", href: "/studio", icon: Database, sectionId: "studio" },
+        { name: "Dataset Architecture", href: "/studio#architecture", icon: Database, sectionId: "architecture" },
+        { name: "Preprocessing Audit", href: "/studio#preprocessing", icon: Sliders, sectionId: "preprocessing" },
+        { name: "Feature Matrix & Signals", href: "/studio#features", icon: Table2, sectionId: "features" },
         { name: "Cohort Overlap Matrix", href: "/studio#overlap", icon: Layers, sectionId: "overlap" },
         { name: "Holdout Trajectory Inspector", href: "/studio#inspector", icon: TrendingUp, sectionId: "inspector" },
         { name: "Domain Deep Dives", href: "/studio#deep-dives", icon: BarChart3, sectionId: "deep-dives" },
@@ -248,9 +311,23 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
                   >
                     {group.items.map((item, iIdx) => {
                       const Icon = item.icon;
-                      const isExactPath = pathname === item.href || (item.href === "/" && pathname === "/");
-                      const isSectionActive = activeSection === item.sectionId && (pathname === "/" || pathname === item.href.split("#")[0]);
-                      const isActive = pathname.startsWith(item.href.split("#")[0]) && item.href !== "/" ? true : isSectionActive;
+                      const itemPath = item.href.split("#")[0] || "/";
+                      const itemHash = item.href.includes("#") ? item.href.split("#")[1] : null;
+                      const isCurrentPage = pathname === itemPath || pathname === `${itemPath}/` || (itemPath === "/" && pathname === "");
+
+                      let isActive = false;
+                      if (isCurrentPage) {
+                        if (itemHash) {
+                          isActive = currentSection === item.sectionId;
+                        } else {
+                          isActive =
+                            currentSection === item.sectionId ||
+                            (itemPath === "/studio" && (!currentSection || currentSection === "studio")) ||
+                            (itemPath === "/" && (!currentSection || currentSection === "hero"));
+                        }
+                      } else {
+                        isActive = !item.href.includes("#") && (pathname === item.href || pathname === `${item.href}/`);
+                      }
 
                       return (
                         <Link

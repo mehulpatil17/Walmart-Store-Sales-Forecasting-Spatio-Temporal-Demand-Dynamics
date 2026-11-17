@@ -8,9 +8,9 @@
 
 ## Research Question
 
-> Can gradient-boosted decision trees with hierarchical out-of-fold target encodings and calendar surge flags improve department-level weekly sales forecasting over persistence and seasonal baselines on high-volatility holiday weeks without data leakage?
+> Can gradient-boosted decision trees with historical group medians and calendar surge flags improve department-level weekly sales forecasting over linear and heuristic baselines on high-volatility holiday weeks without data leakage?
 
-**Verdict: Supported.** Tuned XGBoost achieves $1,616.78 WMAE (97.65% R²), cutting error by 33.3% over historical median baseline.
+**Verdict: Supported.** Tuned XGBoost achieves $1,616.78 WMAE (97.65% R²), cutting error by 33.3% over the historical median baseline and 6.5% over Random Forest.
 
 ---
 
@@ -23,8 +23,8 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 
 | Route | Page | Highlights |
 |---|---|---|
-| `/` | Research Overview | KPI scorecard, model ladder, error-tolerance slider, confusion matrix, limitations, oral defense gateway |
-| `/studio` | Data Studio | Cohort overlap matrix, interactive 39-week holdout trajectory inspector (Store & Dept dropdowns), group-by explorer with CSV export |
+| `/` | Research Portal | Overview & verdict, formal research question, foundational discoveries, KPI scorecard, leak-free validation firewall, 8-rung model ladder, decision support, and error/risk governance |
+| `/studio` | Data Studio | Dataset architecture & schema viewer, 5-step ETL pipeline scrubber, 19-feature taxonomy & signal explorer, cohort overlap matrix, interactive 39-week holdout trajectory inspector, and group-by explorer with CSV export |
 | `/predictor` | Model Predictor | Zero-latency client-side calibrated surrogate scoring engine with scenario presets and real-time demand gauge |
 | `/qna` | Oral Defense | ES 335 Individual Understanding and Defense declarations (Mehul Patil & Akshit Kumar), 16 academic Q&As with search and category filters |
 
@@ -37,19 +37,16 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 | Model Architecture | Model Family | Holdout WMAE ($) | Holdout MAE ($) | Holdout RMSE ($) | Holdout R² | Holiday Error Ratio | Training Sec |
 |---|---|---|---|---|---|---|---|
 | **Store-Dept Median** | Heuristic Baseline | $2,423.62 | $2,352.97 | $5,171.56 | 0.9456 | 1.19x | 0.05s |
-| **Last Week (Lag-1)** | Persistence | $1,734.76 | $1,676.49 | $3,812.86 | 0.9704 | 1.22x | 0.12s |
-| **Same Week Last Year (Lag-52)** | 52-Week Seasonal | $1,804.62 | $1,802.86 | $3,858.47 | 0.9697 | 1.01x | 0.25s |
-| **Ridge Regression (α=100)** | Regularized Linear | $2,506.24 | $2,483.67 | $4,561.80 | 0.9577 | 1.06x | 1.63s |
-| **CatBoost Regressor** | Oblivious Trees | $1,841.93 | $1,821.98 | $3,833.50 | 0.9701 | 1.05x | 19.65s |
-| **LightGBM Regressor** | Histogram GBDT | $1,736.87 | $1,723.84 | $3,699.59 | 0.9721 | 1.05x | 85.97s |
+| **Ridge Regression (α=100)** | Regularized Linear ($L_2$) | $2,506.24 | $2,483.67 | $4,561.80 | 0.9577 | 1.06x | 1.63s |
 | **Random Forest (100 trees)** | Bagged Ensemble | $1,730.04 | $1,718.29 | $3,526.26 | 0.9747 | 1.04x | 51.83s |
 | **Tuned XGBoost (Champion)** | Depth-Wise GBDT | **$1,616.78** | **$1,606.97** | **$3,399.11** | **0.9765** | **1.04x** | **16.75s** |
 
-- **Champion 95% Bootstrap CI:** [$1,594.12, $1,639.45] WMAE
-- **Formal Hypothesis Testing (N = 115,588 Holdout Rows):**
-  - **XGBoost vs. Random Forest:** Paired $t = 26.75$ ($p = 3.42 \times 10^{-157}$, Wilcoxon $p = 8.27 \times 10^{-16}$). WMAE reduction of $\$102.51$ (95% CI: $[\$92.69, \$111.72]$). XGBoost outperformed RF in 100.0% of bootstrap resamples.
-  - **XGBoost vs. Ridge Linear:** Paired $t = 132.94$ ($p < 10^{-300}$), confirming severe structural underfitting in linear representations.
-  - **XGBoost vs. Lag-1 Persistence:** Paired $t = 6.96$ ($p = 3.31 \times 10^{-12}$), showing superior agility during holiday demand spikes.
+- **Error Reduction:** Tuned XGBoost reduces WMAE by **$806.84 (-33.3%)** over the heuristic median baseline and by **$113.26 (-6.5%)** over Random Forest.
+- **Model Progression:**
+  - **Store-Dept Median:** Non-parametric empirical floor baseline.
+  - **Ridge Regression:** Demonstrates high structural bias ($2,506.24 WMAE) from linear inability to capture holiday multiplicative interactions.
+  - **Random Forest:** Bagged variance reduction ($1,730.04 WMAE) using parallel decorrelated trees.
+  - **Tuned XGBoost:** Dominant sequential boosting with Hessian-guided pruning and leaf regularization.
 
 ---
 
@@ -70,40 +67,175 @@ A multi-page academic research dashboard built with Next.js, TypeScript, and Tai
 
 ---
 
-## Reproduction Steps
+---
 
-### 1. Clone & Setup
+## Reproduction & Execution Protocol Across Operating Systems
+
+This project is engineered for deterministic reproducibility (`SEED = 42`) across **Windows**, **Linux**, and **macOS**.
+
+### System & Toolchain Prerequisites
+
+| Component | Minimum Requirement | Recommended / Verified | Notes |
+|---|---|---|---|
+| **Python** | 3.10+ | 3.10 – 3.14 (x64 / arm64) | Requires `pip` and virtual environment support (`venv`) |
+| **Node.js** | 18+ LTS | v20 LTS / v22 | Required for the interactive Next.js research portal (`portal/`) |
+| **RAM** | 8 GB | 16 GB | Needed for XGBoost & Random Forest multi-threaded training |
+| **Disk Space** | ~250 MB | 500 MB | Raw CSVs (15 MB), Parquet holdout partitions (7.5 MB), Model weights (136 MB) |
+| **C/C++ & OpenMP** | System default | `libomp` (macOS), `libgomp1` (Linux) | **Crucial for macOS:** XGBoost multi-threading requires OpenMP |
+
+---
+
+### Dataset Acquisition & Alternate Download Options
+
+The dataset comprises 421,570 training rows across 45 stores and 81 departments. You can obtain it via any of the following three methods:
+
+#### Option 1: Automated Python Helper (Recommended — Zero Configuration)
+A single self-contained script handles downloading, recursive unzipping of nested archives (e.g. `train.csv.zip`, `features.csv.zip`), path normalization, and row-count verification:
 ```bash
-git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git
-cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department
-pip install -r requirements.txt
+# Run automated download & extraction
+python download_dataset.py
+
+# Verify dataset checksums and dimensions
+python download_dataset.py --check
 ```
 
-### 2. Download Dataset
+#### Option 2: Official Kaggle CLI
+If you already have your Kaggle credentials configured:
+1. Ensure your `kaggle.json` token is placed in:
+   - **Windows:** `%USERPROFILE%\.kaggle\kaggle.json`
+   - **Linux / macOS:** `~/.kaggle/kaggle.json` (set permissions: `chmod 600 ~/.kaggle/kaggle.json`)
+2. Accept the competition rules at [Kaggle Competition Rules](https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/rules).
+3. Download and extract:
 ```bash
 kaggle competitions download -c walmart-recruiting-store-sales-forecasting -p data/
-unzip data/walmart-recruiting-store-sales-forecasting.zip -d data/
+python download_dataset.py --extract-only
 ```
-Or download manually from [Kaggle](https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data).
 
-### 3. Train Models & Generate Predictions
+#### Option 3: Direct Web Browser Download (100% Credential-Free — No Token Needed)
+If you do not have a Kaggle API token or prefer a direct web browser download:
+1. Visit the Kaggle data page: [Walmart Recruiting Store Sales Forecasting Data](https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting/data).
+2. Log in and accept the competition rules if prompted.
+3. Click the **"Download All"** button to download `walmart-recruiting-store-sales-forecasting.zip` (~15 MB).
+4. Place the downloaded `.zip` file inside the `data/` directory.
+5. Run the automated extractor and validator:
 ```bash
-python training_pipeline.py --model xgboost
+python download_dataset.py --extract-only
+python download_dataset.py --check
+```
+*Note:* If unzipping manually, make sure to extract the inner archives (`train.csv.zip`, `features.csv.zip`, and `test.csv.zip`) into `data/` so that `stores.csv`, `train.csv`, `features.csv`, and `test.csv` are present.
+
+---
+
+### Step-by-Step Execution Protocols by Operating System
+
+````carousel
+```powershell
+# ====================================================================
+# WINDOWS (PowerShell 5.1 / PowerShell 7+ / CMD)
+# ====================================================================
+
+# 1. Clone & create virtual environment
+git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git
+cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+# (If blocked by execution policy, run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass)
+
+# 2. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 3. Ingest and verify dataset
+python download_dataset.py
+python download_dataset.py --check
+
+# 4. Execute deterministic ML pipelines
+python training_pipeline.py
 python build_models_and_predictions.py
-```
-
-### 4. Generate Portal Data
-```bash
 python generate_results_json.py
-```
 
-### 5. Launch Portal
-```bash
-cd portal
-npm install
-npm run dev
+# 5. Launch Model Server & Interactive Web Portal
+.\run_portal.bat
+# (Concurrently starts Python model_server.py on :5001 and Next.js portal on :3000)
 ```
-Open http://localhost:3000.
+<!-- slide -->
+```bash
+# ====================================================================
+# LINUX (Ubuntu / Debian / RHEL / Fedora)
+# ====================================================================
+
+# 1. Install system prerequisites (Ubuntu/Debian)
+sudo apt update && sudo apt install -y python3-venv python3-pip build-essential libgomp1 unzip nodejs npm
+
+# 2. Clone & create virtual environment
+git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git
+cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 4. Ingest and verify dataset
+python3 download_dataset.py
+python3 download_dataset.py --check
+
+# 5. Execute deterministic ML pipelines
+python3 training_pipeline.py
+python3 build_models_and_predictions.py
+python3 generate_results_json.py
+
+# 6. Launch Model Server & Interactive Web Portal
+chmod +x run_portal.sh
+./run_portal.sh
+# (Starts model_server.py in background with graceful SIGINT cleanup and runs portal on :3000)
+```
+<!-- slide -->
+```bash
+# ====================================================================
+# macOS (Apple Silicon M1-M4 & Intel x86_64)
+# ====================================================================
+
+# 1. Install prerequisites via Homebrew
+# NOTE: libomp is required for OpenMP multi-threading in XGBoost on macOS
+brew install python@3.11 node libomp unzip
+
+# 2. Clone & create virtual environment
+git clone https://github.com/mehulpatil17/Walmart-Weekly-Sales-Forecasting-by-Store-and-Department.git
+cd Walmart-Weekly-Sales-Forecasting-by-Store-and-Department
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 4. Ingest and verify dataset
+python3 download_dataset.py
+python3 download_dataset.py --check
+
+# 5. Execute deterministic ML pipelines
+python3 training_pipeline.py
+python3 build_models_and_predictions.py
+python3 generate_results_json.py
+
+# 6. Launch Model Server & Interactive Web Portal
+chmod +x run_portal.sh
+./run_portal.sh
+```
+````
+
+---
+
+### Dataset Integrity & Expected Checksums
+
+| File | Rows | Columns | Expected Size | Description |
+|---|---|---|---|---|
+| `data/train.csv` | 421,570 | 5 | ~12.8 MB | Historical Sales Ground Truth (Feb 2010 – Oct 2012) |
+| `data/features.csv` | 8,190 | 12 | ~592 KB | Macroeconomic indicators & Promotional Markdowns |
+| `data/stores.csv` | 45 | 3 | ~532 bytes | Store Metadata (Format Type A/B/C & Square Footage) |
+| `data/test.csv` | 115,064 | 4 | ~2.60 MB | Official Kaggle competition evaluation set |
 
 ---
 
@@ -114,12 +246,16 @@ Open http://localhost:3000.
 | `walmart_sales_forecasting.ipynb` | End-to-end reproducible Jupyter Notebook walking through data ingestion, EDA, leakage-free preprocessing, model evaluation, and failure audits |
 | `training_pipeline.py` | End-to-end leakage-free training with chronological OOT split |
 | `build_models_and_predictions.py` | Multi-model benchmark (baselines + Ridge + RF + XGBoost) |
-| `generate_results_json.py` | Generates `results.json` for the portal |
+| `download_dataset.py` | Cross-platform automated dataset downloader, recursive extractor, and integrity validator |
+| `run_portal.bat` | Windows one-click launcher for background model server and Next.js portal |
+| `run_portal.sh` | Linux & macOS unified launcher with process trapping and graceful shutdown |
+| `generate_results_json.py` | Generates single-source `results.json` for the portal |
+| `model_server.py` | Lightweight zero-dependency HTTP model server serving live XGBoost predictions on port 5001 |
 | `reports/` | Academic coursework reports (EDA report, evaluation report, model recommendation, course prompt) |
 | `PROJECT_FILE_INVENTORY.md` | Full repository file index with purpose, technical role, and status for each file |
 | `portal/` | Next.js interactive research dashboard |
-| `data/` | Raw Kaggle CSV files (not committed; download via Kaggle CLI) |
-| `models/` | Trained model checkpoints (not committed; regenerate via pipeline) |
+| `data/` | Raw Kaggle CSV files (download via `download_dataset.py` or Kaggle CLI) |
+| `models/` | Trained model checkpoints (regenerate via `training_pipeline.py`) |
 
 ---
 
@@ -146,11 +282,9 @@ All model design decisions, hyperparameter choices, evaluation methodology, and 
 ## Citations & Academic References
 
 1. **Chen, T., & Guestrin, C. (2016).** XGBoost: A Scalable Tree Boosting System. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 785–794).
-2. **Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., & Liu, T.-Y. (2017).** LightGBM: A Highly Efficient Gradient Boosting Decision Tree. In *Advances in Neural Information Processing Systems (NeurIPS 2017)* (Vol. 30, pp. 3146–3154).
-3. **Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., & Gulin, A. (2018).** CatBoost: Unbiased boosting with categorical features. In *Advances in Neural Information Processing Systems (NeurIPS 2018)* (Vol. 31, pp. 6638–6648).
-4. **Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019).** Optuna: A Next-generation Hyperparameter Optimization Framework. In *Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining* (pp. 2623–2631).
-5. **Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011).** Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research (JMLR)*, 12, 2825–2830.
-6. **Walmart Inc. / Kaggle (2014).** Walmart Recruiting - Store Sales Forecasting: Historical sales data for 45 Walmart stores located in different regions. Kaggle Competition Dataset. https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting
+2. **Breiman, L. (2001).** Random Forests. *Machine Learning*, 45(1), 5–32.
+3. **Pedregosa, F., et al. (2011).** Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research (JMLR)*, 12, 2825–2830.
+4. **Walmart Inc. / Kaggle (2014).** Walmart Recruiting - Store Sales Forecasting. Kaggle Competition Dataset. https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting
 
 ---
 

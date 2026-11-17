@@ -12,11 +12,17 @@ import {
   Sliders,
   CheckCircle2,
   Sparkles,
-  Info
+  Info,
+  Database,
+  ShieldCheck,
+  AlertTriangle,
+  Table2,
+  ArrowRight,
+  Search
 } from "lucide-react";
 
 export default function DataStudioPage() {
-  const { data_studio } = resultsData;
+  const { data_studio, dataset_architecture, feature_domains, feature_catalogue } = resultsData;
   const holdoutData = (resultsData as Record<string, unknown>).holdout_inspector as {
     stores: Array<{ id: number; type: string; size: number; label: string }>;
     departments: Array<{ id: number; name: string; label: string }>;
@@ -50,6 +56,17 @@ export default function DataStudioPage() {
     >;
   } || { stores: [], departments: [], series: {} };
 
+  // State for Dataset Architecture & Schemas (Shifted from Research Portal)
+  const [selectedFile, setSelectedFile] = useState<string>("train.csv");
+
+  // State for Preprocessing Pipeline scrubber (Shifted from Research Portal)
+  const [activeEtlStep, setActiveEtlStep] = useState<number>(0);
+
+  // State for Feature Matrix & Signals (Shifted from Research Portal)
+  const [selectedFeatureProfile, setSelectedFeatureProfile] = useState<string>("Size");
+  const [activeDomainFilter, setActiveDomainFilter] = useState<string>("ALL");
+  const [featureSearch, setFeatureSearch] = useState<string>("");
+
   // State for interactive group-by explorer
   const [groupByDimension, setGroupByDimension] = useState<string>("StoreType");
 
@@ -71,6 +88,138 @@ export default function DataStudioPage() {
     ridge: true,
     median: false,
   });
+
+  // Monochrome domain styling helper
+  const getDomainShade = (domainId: string) => {
+    switch (domainId) {
+      case "A":
+        return {
+          bar: "border-slate-800 dark:border-zinc-300",
+          badge: "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100",
+          tag: "bg-slate-700 text-white dark:bg-zinc-700 dark:text-zinc-100"
+        };
+      case "B":
+        return {
+          bar: "border-zinc-700 dark:border-zinc-300",
+          badge: "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-950",
+          tag: "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900"
+        };
+      case "C":
+        return {
+          bar: "border-zinc-500 dark:border-zinc-400",
+          badge: "bg-zinc-600 text-white dark:bg-zinc-400 dark:text-zinc-950",
+          tag: "bg-zinc-600 text-white dark:bg-zinc-400 dark:text-zinc-950"
+        };
+      case "D":
+        return {
+          bar: "border-zinc-400 dark:border-zinc-600",
+          badge: "bg-zinc-400 text-zinc-950 dark:bg-zinc-600 dark:text-white",
+          tag: "bg-zinc-400 text-zinc-950 dark:bg-zinc-600 dark:text-white"
+        };
+      case "E":
+      default:
+        return {
+          bar: "border-zinc-300 dark:border-zinc-700",
+          badge: "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200",
+          tag: "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200"
+        };
+    }
+  };
+
+  // Selected file schema
+  const activeSchema = useMemo(() => {
+    return dataset_architecture.files.find((f) => f.filename === selectedFile);
+  }, [dataset_architecture.files, selectedFile]);
+
+  // Filtered feature catalogue
+  const filteredFeatures = useMemo(() => {
+    return feature_catalogue.filter((f) => {
+      const matchDomain = activeDomainFilter === "ALL" || f.domain === activeDomainFilter;
+      const matchSearch =
+        f.name.toLowerCase().includes(featureSearch.toLowerCase()) ||
+        f.desc.toLowerCase().includes(featureSearch.toLowerCase());
+      return matchDomain && matchSearch;
+    });
+  }, [feature_catalogue, activeDomainFilter, featureSearch]);
+
+  // Detailed step-by-step pipeline impact data
+  const etlStepsData = [
+    {
+      step: "01",
+      name: "Relational Join",
+      title: "Store & Feature Alignment",
+      metrics: [
+        { label: "Training Records Retained", value: "421,570 / 421,570", pct: 100, tag: "100% Intact" },
+        { label: "Dropped Records Risk", value: "0 rows dropped", pct: 0, tag: "Zero Loss" },
+        { label: "Primary Key Alignment", value: "Store + Date + IsHoliday", pct: 100, tag: "Exact Match" }
+      ],
+      points: [
+        "Left outer join preserves all 421,570 ground-truth department sales observations without loss.",
+        "Avoids silent row dropping that occurs when inner joins encounter unobserved store dates.",
+        "Guarantees identical temporal index ordering with official Kaggle test evaluation records."
+      ]
+    },
+    {
+      step: "02",
+      name: "Macro Imputation",
+      title: "CPI & Unemployment Forward-Fill",
+      metrics: [
+        { label: "Raw Test Missingness", value: "68.5% Missing", pct: 68.5, tag: "Unobserved Test" },
+        { label: "Imputed Missingness", value: "0.0% Missing", pct: 100, tag: "Clean Fill" },
+        { label: "Macro Signal Retained", value: "+1.2% Tree Importance", pct: 25, tag: "Signal Retained" }
+      ],
+      points: [
+        "Store-level forward-fill propagates latest economic climate without future data leakage.",
+        "Training partition median acts as robust secondary fallback for missing store series.",
+        "Preserves macroeconomic shifts while ensuring clean numerical input vectors for trees."
+      ]
+    },
+    {
+      step: "03",
+      name: "Markdown Encoding",
+      title: "Promotional Discount Imputation",
+      metrics: [
+        { label: "Raw Pre-2011 Nulls", value: "64.2% Missing", pct: 64.2, tag: "Unrecorded Period" },
+        { label: "Clean Zero-Discount Fill", value: "0.00 USD Imputed", pct: 100, tag: "True Economic $0" },
+        { label: "Engineered Signals", value: "Total_MarkDown & Has_MarkDown", pct: 90, tag: "Dual Feature" }
+      ],
+      points: [
+        "Physical economic reality: unrecorded promotional markdowns represent a literal $0.00 customer discount.",
+        "Mean imputation would falsely fabricate phantom discounts throughout the entirety of 2010.",
+        "Engineered Total_MarkDown aggregate and Has_MarkDown indicator cleanly separate discount presence."
+      ]
+    },
+    {
+      step: "04",
+      name: "Surge Flags",
+      title: "ISO Calendar Surge Flags",
+      metrics: [
+        { label: "Thanksgiving W47 Lift", value: "+45.2% Sales Volume", pct: 90, tag: "Holiday Surge" },
+        { label: "Pre-Christmas W51 Lift", value: "+81.4% Sales Volume", pct: 100, tag: "Annual Peak" },
+        { label: "WMAE Error Reduction", value: "-$117.80 WMAE", pct: 85, tag: "Statistically Verified" }
+      ],
+      points: [
+        "Deconstructs coarse binary IsHoliday into specific calendar indicators (Weeks 6, 36, 47, 51, 52).",
+        "Captures the unflagged pre-Christmas shopping rush that standard Kaggle holiday tags completely omit.",
+        "Eliminates severe holiday under-forecasting bias on high-volume department categories."
+      ]
+    },
+    {
+      step: "05",
+      name: "Target Statistics",
+      title: "Hierarchical Out-of-Fold Priors",
+      metrics: [
+        { label: "Predictive Gain Carrier", value: "60.2% Total Model Gain", pct: 100, tag: "Primary Signal" },
+        { label: "Training Partition Scope", value: "104 Weeks Strictly", pct: 100, tag: "Zero Leakage" },
+        { label: "Shrinkage Stability", value: "sd_median & dw_median", pct: 95, tag: "Hierarchical Prior" }
+      ],
+      points: [
+        "Computes Department-Week (dw_median) and Store-Dept (sd_median) baselines strictly within train window.",
+        "Replaces high-cardinality categorical IDs with smooth continuous empirical priors.",
+        "Guarantees complete chronological barrier: 0 forward leakage into the 39-week validation holdout."
+      ]
+    }
+  ];
 
   // Current selected holdout series
   const activeSeriesKey = `${selectedStore}_${selectedDept}`;
@@ -200,19 +349,554 @@ export default function DataStudioPage() {
           <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border border-slate-700/60 dark:border-zinc-700">
             Data Studio
           </span>
-          <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">Cohort Overlap &amp; Holdout Time-Series Diagnostics</span>
+          <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums">Schema Architecture, Preprocessing ETL &amp; Feature Signals</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white">
-          Evaluation Universe &amp; Holdout Trajectory Studio
+          Data Architecture, Feature Engineering &amp; Diagnostics Studio
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-300 max-w-3xl leading-relaxed">
-          Audit the evaluation universe across physical stores, department units, and time-series pairs. Interactively
-          inspect 39-week holdout trajectories across baselines and candidate models (Proposal Q7) and verify zero data leakage.
+          Explore the complete Walmart forecasting data universe. Audit relational schemas, inspect step-by-step ETL transformations, analyze univariate feature signals and gain rankings, examine cohort partition overlap, and interactively track 39-week holdout trajectories.
         </p>
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 1. COHORT OVERLAP & INTERSECTION MATRIX (WITH JACCARD) */}
+      {/* 1. DATASET TOPOLOGY & SCHEMA PANEL (SHIFTED FROM RESEARCH PORTAL) */}
+      {/* ------------------------------------------------------------------ */}
+      <section id="architecture" className="space-y-5">
+        <div>
+          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Data Engineering Foundation</h2>
+          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Dataset Topology &amp; Schema Panel</h3>
+        </div>
+
+        {/* Unit of Observation Callout Banner */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 flex-shrink-0 mt-0.5">
+              <Database size={16} />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 block mb-0.5">
+                Unit of Observation (What One Row Represents)
+              </span>
+              <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
+                Each row represents the weekly aggregate point-of-sale sales (<code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Weekly_Sales</code>, in $ USD) for a specific department within a specific store over a contiguous 7-day ISO calendar week (uniquely keyed by <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Store</code>, <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Dept</code>, and <code className="font-mono text-[11px] px-1 py-0.5 bg-zinc-200/80 dark:bg-zinc-800 rounded">Date</code>).
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-center px-2.5 py-1 rounded text-[11px] font-semibold bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+            536,634 Total Rows
+          </span>
+        </div>
+
+        {/* Interactive File Inventory and Click-to-Inspect Schema */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* File selector cards */}
+          <div className="space-y-3">
+            <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+              Dataset Partitions (Click to Inspect)
+            </span>
+            {dataset_architecture.files.map((file) => (
+              <button
+                key={file.filename}
+                onClick={() => setSelectedFile(file.filename)}
+                className={`w-full p-4 rounded-xl text-left border transition flex items-center justify-between ${
+                  selectedFile === file.filename
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700/80 dark:border-zinc-700 shadow-sm"
+                    : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Database size={15} className={selectedFile === file.filename ? "text-white dark:text-zinc-950" : "text-zinc-600 dark:text-zinc-400"} />
+                    <span className="text-sm font-bold">
+                      {file.filename}
+                    </span>
+                  </div>
+                  <span className={`text-xs block mt-1 ${selectedFile === file.filename ? "text-zinc-300 dark:text-zinc-700" : "text-zinc-500 dark:text-zinc-400"}`}>
+                    {file.role}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold block tabular-nums">
+                    {file.rows.toLocaleString()} rows
+                  </span>
+                  <span className={`text-[11px] tabular-nums ${selectedFile === file.filename ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>
+                    {file.size_mb} MB
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Schema details panel */}
+          <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div>
+                <span className="text-xs font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider">
+                  Schema &amp; Data Dictionary
+                </span>
+                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                  {activeSchema?.filename}
+                </h4>
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800">
+                Primary Keys: {activeSchema?.keys.join(", ")}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
+                    <th className="py-2 px-3">Column Name</th>
+                    <th className="py-2 px-3">Dtype</th>
+                    <th className="py-2 px-3">Semantic Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                  {activeSchema?.schema.map((s, idx) => (
+                    <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                      <td className="py-2.5 px-3 font-bold text-zinc-900 dark:text-zinc-100">{s.col}</td>
+                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">{s.type}</td>
+                      <td className="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">{s.desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 2. PREPROCESSING AUDIT & ETL PIPELINE (SHIFTED FROM RESEARCH PORTAL) */}
+      {/* ------------------------------------------------------------------ */}
+      <section id="preprocessing" className="space-y-5">
+        <div>
+          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Data Hygiene &amp; ETL</h2>
+          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Preprocessing Pipeline &amp; Decision Audit</h3>
+        </div>
+
+        {/* 5-Step Interactive ETL Pipeline Scrubber & Impact Graph */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            {etlStepsData.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveEtlStep(idx)}
+                className={`p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                  activeEtlStep === idx
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700 shadow-sm"
+                    : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${activeEtlStep === idx ? "text-zinc-300 dark:text-zinc-400" : "text-zinc-500"}`}>
+                    Step {s.step}
+                  </span>
+                  {activeEtlStep === idx && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  )}
+                </div>
+                <h4 className="text-xs font-bold mt-1 truncate">{s.name}</h4>
+              </button>
+            ))}
+          </div>
+
+          {/* Interactive Step Detail Card with Metric Graph and Bullet Points */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Step {etlStepsData[activeEtlStep].step} Architecture
+                </span>
+                <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                  {etlStepsData[activeEtlStep].title}
+                </h4>
+              </div>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+                Click any step above to inspect
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
+              {/* Dynamic Metric Bars for Active Step */}
+              <div className="space-y-3 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block mb-1">
+                  Quantified Impact Indicators
+                </span>
+                {etlStepsData[activeEtlStep].metrics.map((m, mIdx) => (
+                  <div key={mIdx} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-700 dark:text-zinc-300 font-medium">{m.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">{m.value}</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
+                          {m.tag}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 overflow-hidden flex">
+                      <div
+                        className="bg-slate-800 dark:bg-zinc-300 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(5, m.pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Structured Key Points */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                  Engineering Rationale &amp; Safeguards
+                </span>
+                <ul className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  {etlStepsData[activeEtlStep].points.map((pt, pIdx) => (
+                    <li key={pIdx} className="flex items-start gap-2">
+                      <span className="text-slate-800 dark:text-zinc-200 font-bold mt-0.5">•</span>
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Justification Cards - Structured with Bullet Points */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
+            <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider block">
+              DECISION 1: JOIN INTEGRITY
+            </span>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why Left Join on Store + Date?</h4>
+            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">100% Row Retention:</strong> Zero row loss occurred across all 421,570 training records.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Truncation Protection:</strong> Inner joins risked dropping unobserved store dates, causing evaluation drift.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Test Alignment:</strong> Maintains exact contiguous sequence matching Kaggle evaluation rows.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
+            <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider block mb-1">
+              DECISION 2: ZERO-MARKDOWN IMPUTATION
+            </span>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why 0.0 Instead of Mean Imputation?</h4>
+            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Physical Truth:</strong> Markdowns represent promotional discounts; missing logs reflect a real $0.00 discount.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Anti-Hallucination:</strong> Mean imputation would falsely inject artificial discounts into 100% of 2010.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Dual Signals:</strong> Created <code className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px]">Total_MarkDown</code> and <code className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-[10px]">Has_MarkDown</code> flags.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-2.5">
+            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider block mb-1">
+              DECISION 3: PRESERVING NEGATIVE SALES
+            </span>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">Why Retain 1,285 Negative Rows?</h4>
+            <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-1">
+              <li className="flex items-start gap-1.5">
+                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Return Diagnostics:</strong> Negative values capture genuine customer merchandise returns (concentrated in Dept 47).</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Strict Honesty:</strong> Deleting negative returns fabricates optimistic bias and fails on unseen holdout returns.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+                <span><strong className="text-zinc-900 dark:text-zinc-100">Tree Robustness:</strong> Tree split algorithms handle negative real targets without numerical divergence.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 3. FEATURE TAXONOMY & SIGNAL EXPLORER (SHIFTED FROM RESEARCH PORTAL) */}
+      {/* ------------------------------------------------------------------ */}
+      <section id="features" className="space-y-5">
+        <div>
+          <h2 className="text-xs font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">Input Representations</h2>
+          <h3 className="text-xl font-bold text-zinc-950 dark:text-white">Feature Taxonomy &amp; Separation Signals</h3>
+        </div>
+
+        {/* Domain Taxonomy Pills - Styled in Shades of Grey for visual hierarchy */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {feature_domains.map((dom) => {
+            const shade = getDomainShade(dom.id);
+            return (
+              <div
+                key={dom.id}
+                className={`p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm border-t-4 ${shade.bar}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Domain {dom.id}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${shade.badge}`}>
+                    {dom.count} feats
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-200 mt-2">{dom.name}</h4>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-1.5 leading-snug">{dom.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Feature Signals Interactive Profile Explorer */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+            <div>
+              <span className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
+                Univariate Signal Explorer
+              </span>
+              <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                Feature Band vs. Mean Target Sales
+              </h4>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Select Feature:</span>
+              <select
+                value={selectedFeatureProfile}
+                onChange={(e) => setSelectedFeatureProfile(e.target.value)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-medium text-zinc-900 dark:text-zinc-100 shadow-xs"
+              >
+                <option value="Size">Store Floor Size (sq. ft.)</option>
+                <option value="Type">Store Format Type (A, B, C)</option>
+                <option value="IsHoliday">IsHoliday Indicator (0 vs 1)</option>
+                <option value="Week">ISO Calendar Week of Year</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Interactive Profile Visualization in Shades of Grey */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
+            <div className="lg:col-span-3 space-y-3">
+              {selectedFeatureProfile === "Size" && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs tabular-nums">
+                    <span className="text-zinc-700 dark:text-zinc-300">Small Stores (&lt;70k sq. ft.)</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$9,519 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "35%" }} />
+                  </div>
+
+                  <div className="flex justify-between text-xs tabular-nums pt-2">
+                    <span className="text-zinc-700 dark:text-zinc-300">Medium Stores (70k–140k sq. ft.)</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$12,237 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-600 dark:bg-zinc-400 h-3 rounded-full" style={{ width: "55%" }} />
+                  </div>
+
+                  <div className="flex justify-between text-xs tabular-nums pt-2">
+                    <span className="text-zinc-950 dark:text-white font-semibold">Supercenters (&gt;140k sq. ft.)</span>
+                    <span className="font-bold text-zinc-950 dark:text-white">$20,099 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "90%" }} />
+                  </div>
+                </div>
+              )}
+
+              {selectedFeatureProfile === "Type" && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs tabular-nums">
+                    <span className="text-zinc-950 dark:text-white font-semibold">Type A (22 stores, 64.3% revenue)</span>
+                    <span className="font-bold text-zinc-950 dark:text-white">$20,099 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "88%" }} />
+                  </div>
+
+                  <div className="flex justify-between text-xs tabular-nums pt-2">
+                    <span className="text-zinc-700 dark:text-zinc-300">Type B (17 stores, 29.7% revenue)</span>
+                    <span className="font-bold text-zinc-950 dark:text-zinc-100">$12,237 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-600 dark:bg-zinc-400 h-3 rounded-full" style={{ width: "52%" }} />
+                  </div>
+
+                  <div className="flex justify-between text-xs tabular-nums pt-2">
+                    <span className="text-zinc-700 dark:text-zinc-300">Type C (6 small format stores, 6.0% revenue)</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$9,519 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "38%" }} />
+                  </div>
+                </div>
+              )}
+
+              {selectedFeatureProfile === "IsHoliday" && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs tabular-nums">
+                    <span className="text-zinc-700 dark:text-zinc-300">Regular Non-Holiday Weeks (92.96% of data)</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$15,901 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-400 dark:bg-zinc-600 h-3 rounded-full" style={{ width: "65%" }} />
+                  </div>
+
+                  <div className="flex justify-between text-xs tabular-nums pt-2">
+                    <span className="text-zinc-950 dark:text-white font-semibold">Holiday Weeks (7.04% of data, 5x penalty weight)</span>
+                    <span className="font-bold text-zinc-950 dark:text-white">$17,035 mean</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3">
+                    <div className="bg-zinc-950 dark:bg-white h-3 rounded-full" style={{ width: "75%" }} />
+                  </div>
+                </div>
+              )}
+
+              {selectedFeatureProfile === "Week" && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs tabular-nums">
+                    <span className="text-zinc-700 dark:text-zinc-300">Average Regular Week</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">$15,400</span>
+                  </div>
+                  <div className="flex justify-between text-xs tabular-nums pt-1">
+                    <span className="text-zinc-800 dark:text-zinc-200">Week 47 (Thanksgiving Surge)</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400 tabular-nums">$22,400 (+45%)</span>
+                  </div>
+                  <div className="flex justify-between text-xs tabular-nums pt-1">
+                    <span className="text-zinc-950 dark:text-white font-bold">Week 51 (Pre-Christmas Highest Annual Peak)</span>
+                    <span className="font-bold text-red-600 dark:text-red-400 tabular-nums">$27,800 (+81%)</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cliff cards */}
+            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs space-y-2">
+              <span className="text-[10px] font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider block">
+                Signal Cliff Callout
+              </span>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Notice the steep non-linear cliff at <strong className="text-zinc-950 dark:text-white">140,000 sq. ft.</strong>: stores above this threshold
+                drive double the departmental throughput due to Supercenter grocery footfall.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Full Sortable Feature Catalogue */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider">
+                Feature Catalogue
+              </span>
+              <h4 className="text-base font-bold text-zinc-900 dark:text-white">
+                Top Features Sorted by Relative Gain
+              </h4>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Domain filter pills */}
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg text-xs">
+                {["ALL", "A", "B", "C", "D", "E"].map((dom) => (
+                  <button
+                    key={dom}
+                    onClick={() => setActiveDomainFilter(dom)}
+                    className={`px-2.5 py-1 rounded-md font-medium transition ${
+                      activeDomainFilter === dom
+                        ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 shadow-xs font-bold border border-slate-700/60 dark:border-zinc-700"
+                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white"
+                    }`}
+                  >
+                    {dom === "ALL" ? "All Domains" : `Dom ${dom}`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search input */}
+              <input
+                type="text"
+                placeholder="Search feature..."
+                value={featureSearch}
+                onChange={(e) => setFeatureSearch(e.target.value)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs tabular-nums">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 font-semibold uppercase text-[10px]">
+                  <th className="py-2.5 px-3">Feature Name</th>
+                  <th className="py-2.5 px-3">Domain</th>
+                  <th className="py-2.5 px-3">Missing %</th>
+                  <th className="py-2.5 px-3">Unique</th>
+                  <th className="py-2.5 px-3">Median</th>
+                  <th className="py-2.5 px-3">Gain %</th>
+                  <th className="py-2.5 px-3">Corr (r)</th>
+                  <th className="py-2.5 px-3 font-normal">Description</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {filteredFeatures.map((f, idx) => {
+                  const shade = getDomainShade(f.domain);
+                  return (
+                    <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+                      <td className="py-2.5 px-3 font-bold text-zinc-900 dark:text-zinc-100">{f.name}</td>
+                      <td className="py-2.5 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${shade.tag}`}>
+                          Domain {f.domain}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-zinc-500 dark:text-zinc-400">{f.missing_pct}%</td>
+                      <td className="py-2.5 px-3 text-zinc-700 dark:text-zinc-300">{f.unique.toLocaleString()}</td>
+                      <td className="py-2.5 px-3 font-semibold">{f.median.toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-zinc-950 dark:text-white font-bold">
+                        {(f.importance_gain * 100).toFixed(1)}%
+                      </td>
+                      <td
+                        className={`py-2.5 px-3 font-bold tabular-nums ${
+                          f.univariate_corr > 0.3
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : f.univariate_corr < -0.05
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-zinc-600 dark:text-zinc-400 font-medium"
+                        }`}
+                      >
+                        {f.univariate_corr > 0 ? `+${f.univariate_corr.toFixed(3)}` : f.univariate_corr.toFixed(3)}
+                      </td>
+                      <td className="py-2.5 px-3 text-zinc-500 dark:text-zinc-400 max-w-xs truncate">{f.desc}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 4. COHORT OVERLAP & INTERSECTION MATRIX (WITH JACCARD) */}
       {/* ------------------------------------------------------------------ */}
       <section id="overlap" className="space-y-4">
         <div>
@@ -305,7 +989,7 @@ export default function DataStudioPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 2. INTERACTIVE STORE & DEPT HOLDOUT TRAJECTORY INSPECTOR (PROPOSAL Q7) */}
+      {/* 5. INTERACTIVE STORE & DEPT HOLDOUT TRAJECTORY INSPECTOR (PROPOSAL Q7) */}
       {/* ------------------------------------------------------------------ */}
       <section id="inspector" className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
@@ -356,413 +1040,454 @@ export default function DataStudioPage() {
           </div>
         </div>
 
-        {/* Selectors and Scorecard Controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Controls Panel */}
-          <div className="lg:col-span-5 p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 tracking-wider block mb-1.5">
-                  Select Store Unit:
-                </label>
-                <select
-                  value={selectedStore}
-                  onChange={(e) => setSelectedStore(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-100 shadow-2xs focus:ring-2 focus:ring-slate-800"
-                >
-                  {holdoutData.stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-400 tracking-wider block mb-1.5">
-                  Select Department Unit:
-                </label>
-                <select
-                  value={selectedDept}
-                  onChange={(e) => setSelectedDept(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-900 dark:text-zinc-100 shadow-2xs focus:ring-2 focus:ring-slate-800"
-                >
-                  {holdoutData.departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Model Trace Toggles */}
-            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                Visible Trajectory Layers:
-              </span>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <button
-                  onClick={() => setVisibleModels((prev) => ({ ...prev, actual: !prev.actual }))}
-                  className={`px-2.5 py-1 rounded-md font-semibold border transition ${
-                    visibleModels.actual
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 border-zinc-900 dark:border-white"
-                      : "bg-transparent text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  ● Ground Truth Actual
-                </button>
-                <button
-                  onClick={() => setVisibleModels((prev) => ({ ...prev, xgb: !prev.xgb }))}
-                  className={`px-2.5 py-1 rounded-md font-semibold border transition ${
-                    visibleModels.xgb
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-                      : "bg-transparent text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  ● Tuned XGBoost
-                </button>
-                <button
-                  onClick={() => setVisibleModels((prev) => ({ ...prev, rf: !prev.rf }))}
-                  className={`px-2.5 py-1 rounded-md font-semibold border transition ${
-                    visibleModels.rf
-                      ? "bg-sky-600 text-white border-sky-600 shadow-2xs"
-                      : "bg-transparent text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  ● Random Forest
-                </button>
-                <button
-                  onClick={() => setVisibleModels((prev) => ({ ...prev, ridge: !prev.ridge }))}
-                  className={`px-2.5 py-1 rounded-md font-semibold border transition ${
-                    visibleModels.ridge
-                      ? "bg-amber-600 text-white border-amber-600 shadow-2xs"
-                      : "bg-transparent text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  ● Ridge Linear
-                </button>
-                <button
-                  onClick={() => setVisibleModels((prev) => ({ ...prev, median: !prev.median }))}
-                  className={`px-2.5 py-1 rounded-md font-semibold border transition ${
-                    visibleModels.median
-                      ? "bg-purple-600 text-white border-purple-600 shadow-2xs"
-                      : "bg-transparent text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                  }`}
-                >
-                  -- Hist. Median
-                </button>
-              </div>
-            </div>
+        {/* Series Selection Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          {/* Store Selector */}
+          <div>
+            <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">
+              Select Physical Store (45 Available)
+            </label>
+            <select
+              value={selectedStore}
+              onChange={(e) => setSelectedStore(Number(e.target.value))}
+              className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-950 dark:text-white shadow-2xs"
+            >
+              {holdoutData.stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  Store #{s.id} — {s.type} ({s.size.toLocaleString()} sq ft)
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Pair Evaluation Scorecard */}
-          <div className="lg:col-span-7 p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <div>
-                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  Store {selectedStore} • {currentSeries?.store_info.type} ({currentSeries?.store_info.size.toLocaleString()} sq ft) | Dept {selectedDept}
-                </span>
-                <h4 className="text-sm font-bold text-zinc-950 dark:text-white">
-                  {currentSeries?.dept_info.name}
-                </h4>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 tabular-nums">
-                {displayedPoints.length} Weeks Evaluated
-              </span>
-            </div>
+          {/* Department Selector */}
+          <div>
+            <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">
+              Select Department Unit (81 Available)
+            </label>
+            <select
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(Number(e.target.value))}
+              className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-950 dark:text-white shadow-2xs"
+            >
+              {holdoutData.departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  Dept #{d.id} — {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {currentSeries ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40">
-                  <span className="text-[10px] font-bold uppercase text-emerald-800 dark:text-emerald-400 block">XGBoost WMAE</span>
-                  <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">
-                    ${currentSeries.metrics.xgb_wmae.toLocaleString()}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40">
-                  <span className="text-[10px] font-bold uppercase text-sky-800 dark:text-sky-400 block">Random Forest WMAE</span>
-                  <span className="text-base font-extrabold text-sky-700 dark:text-sky-300 tabular-nums">
-                    ${currentSeries.metrics.rf_wmae.toLocaleString()}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40">
-                  <span className="text-[10px] font-bold uppercase text-amber-800 dark:text-amber-400 block">Ridge Linear WMAE</span>
-                  <span className="text-base font-extrabold text-amber-700 dark:text-amber-300 tabular-nums">
-                    ${currentSeries.metrics.ridge_wmae.toLocaleString()}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40">
-                  <span className="text-[10px] font-bold uppercase text-purple-800 dark:text-purple-400 block">Median Baseline</span>
-                  <span className="text-base font-extrabold text-purple-700 dark:text-purple-300 tabular-nums">
-                    ${currentSeries.metrics.median_wmae.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center justify-between pt-2">
-              <span>
-                XGBoost Holdout MAE: <strong className="text-zinc-900 dark:text-zinc-100">${currentSeries?.metrics.xgb_mae.toLocaleString()}</strong> | RMSE: <strong className="text-zinc-900 dark:text-zinc-100">${currentSeries?.metrics.xgb_rmse.toLocaleString()}</strong>
-              </span>
-              {currentSeries && (
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {currentSeries.metrics.median_wmae > 0
-                    ? `${(
-                        ((currentSeries.metrics.median_wmae - currentSeries.metrics.xgb_wmae) /
-                          currentSeries.metrics.median_wmae) *
-                        100
-                      ).toFixed(1)}% error cut vs Baseline`
-                    : "Stable Series"}
-                </span>
-              )}
+          {/* Quick Benchmark Preset Series Buttons */}
+          <div>
+            <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">
+              Curated Diagnostic Presets
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStore(10);
+                  setSelectedDept(72);
+                }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
+                  selectedStore === 10 && selectedDept === 72
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
+                    : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                Store 10 / Dept 72 (Toys)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStore(1);
+                  setSelectedDept(1);
+                }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
+                  selectedStore === 1 && selectedDept === 1
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
+                    : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                Store 1 / Dept 1 (Candy)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStore(4);
+                  setSelectedDept(92);
+                }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
+                  selectedStore === 4 && selectedDept === 92
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
+                    : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                Store 4 / Dept 92 (Grocery)
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Trajectory Time-Series SVG Chart */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-                39-Week Chronological Out-of-Time Trajectory (Feb 2012 – Oct 2012)
-              </h4>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-amber-400/20 border border-amber-400/60 inline-block" />
-                <span>Holiday Week (5× Penalty)</span>
+        {/* Selected Series KPI Scoreboard */}
+        {currentSeries && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Series Info</span>
+              <span className="text-sm font-bold text-zinc-950 dark:text-white block mt-0.5">
+                Store {currentSeries.store} • Dept {currentSeries.dept}
               </span>
-              <span className="text-zinc-400">| Hover over points for exact sales values</span>
+              <span className="text-[10px] text-zinc-500 truncate block">
+                {currentSeries.store_info.type} • {currentSeries.dept_info.name}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                Champion XGBoost WMAE
+              </span>
+              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5 tabular-nums">
+                ${currentSeries.metrics.xgb_wmae.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-zinc-400">Evaluation metric</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Random Forest WMAE</span>
+              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 block mt-0.5 tabular-nums">
+                ${currentSeries.metrics.rf_wmae.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-zinc-400">100-Tree ensemble</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Ridge Linear WMAE</span>
+              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 block mt-0.5 tabular-nums">
+                ${currentSeries.metrics.ridge_wmae.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-zinc-400">Linear baseline</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Historical Median</span>
+              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 block mt-0.5 tabular-nums">
+                ${currentSeries.metrics.median_wmae.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-[10px] text-zinc-400">Zero-ML benchmark</span>
             </div>
           </div>
+        )}
 
-          {/* SVG Canvas */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[850px] relative">
-              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto select-none overflow-visible">
-                {/* Horizontal reference gridlines */}
-                {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-                  const y = chartHeight - padBottom - pct * (chartHeight - padTop - padBottom);
-                  const val = chartBounds.min + pct * (chartBounds.max - chartBounds.min);
-                  return (
-                    <g key={i}>
+        {/* Model Visibility Toggles & Legend */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
+          <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Toggle Model Curves:
+          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-1.5 cursor-pointer font-bold text-zinc-950 dark:text-white">
+              <input
+                type="checkbox"
+                checked={visibleModels.actual}
+                onChange={(e) => setVisibleModels({ ...visibleModels, actual: e.target.checked })}
+                className="accent-zinc-950 dark:accent-white"
+              />
+              <span className="inline-block w-3 h-0.5 bg-zinc-950 dark:bg-white" />
+              <span>Ground Truth Actual</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer font-bold text-emerald-600 dark:text-emerald-400">
+              <input
+                type="checkbox"
+                checked={visibleModels.xgb}
+                onChange={(e) => setVisibleModels({ ...visibleModels, xgb: e.target.checked })}
+                className="accent-emerald-600"
+              />
+              <span className="inline-block w-3 h-0.5 bg-emerald-600" />
+              <span>Champion XGBoost</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={visibleModels.rf}
+                onChange={(e) => setVisibleModels({ ...visibleModels, rf: e.target.checked })}
+                className="accent-slate-700"
+              />
+              <span className="inline-block w-3 h-0.5 bg-slate-600" />
+              <span>Random Forest</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-amber-700 dark:text-amber-400">
+              <input
+                type="checkbox"
+                checked={visibleModels.ridge}
+                onChange={(e) => setVisibleModels({ ...visibleModels, ridge: e.target.checked })}
+                className="accent-amber-600"
+              />
+              <span className="inline-block w-3 h-0.5 bg-amber-600" />
+              <span>Ridge Regression</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-zinc-500">
+              <input
+                type="checkbox"
+                checked={visibleModels.median}
+                onChange={(e) => setVisibleModels({ ...visibleModels, median: e.target.checked })}
+                className="accent-zinc-400"
+              />
+              <span className="inline-block w-3 h-0.5 bg-zinc-400 border-dashed" />
+              <span>Historical Median</span>
+            </label>
+          </div>
+        </div>
+
+        {/* SVG Time-Series Chart */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3">
+          <div className="flex items-center justify-between text-xs text-zinc-500">
+            <span>Weekly Sequence (2012-02-03 through 2012-10-26 — 39 Contiguous Weeks)</span>
+            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              Hover over points for exact dollar values
+            </span>
+          </div>
+
+          <div className="w-full overflow-x-auto">
+            <svg
+              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              className="w-full h-auto min-w-[700px] select-none"
+              style={{ maxHeight: "380px" }}
+            >
+              {/* Horizontal Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+                const val = chartBounds.min + pct * (chartBounds.max - chartBounds.min);
+                const y = getYCoord(val);
+                return (
+                  <g key={i}>
+                    <line
+                      x1={padLeft}
+                      y1={y}
+                      x2={chartWidth - padRight}
+                      y2={y}
+                      stroke="currentColor"
+                      className="text-zinc-200 dark:text-zinc-800/80"
+                      strokeDasharray={pct === 0 || pct === 1 ? undefined : "3 3"}
+                    />
+                    <text
+                      x={padLeft - 8}
+                      y={y + 4}
+                      textAnchor="end"
+                      className="text-[10px] fill-zinc-400 dark:fill-zinc-500 tabular-nums font-mono"
+                    >
+                      ${(val / 1000).toFixed(0)}k
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Holiday shaded vertical regions */}
+              {displayedPoints.map((p, idx) => {
+                if (p.is_holiday !== 1) return null;
+                const x = getXCoord(idx);
+                return (
+                  <g key={`holiday-band-${idx}`}>
+                    <rect
+                      x={x - 12}
+                      y={padTop}
+                      width={24}
+                      height={chartHeight - padTop - padBottom}
+                      fill="currentColor"
+                      className="text-amber-500/10 dark:text-amber-400/15"
+                    />
+                    <text
+                      x={x}
+                      y={padTop + 12}
+                      textAnchor="middle"
+                      className="text-[9px] font-bold fill-amber-700 dark:fill-amber-400 uppercase tracking-tighter"
+                    >
+                      5× Hol
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Polylines for each visible model */}
+              {visibleModels.median && (
+                <polyline
+                  points={makePolyline("pred_median")}
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-zinc-400 dark:text-zinc-600"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                />
+              )}
+
+              {visibleModels.ridge && (
+                <polyline
+                  points={makePolyline("pred_ridge")}
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-amber-600 dark:text-amber-500"
+                  strokeWidth="1.5"
+                  strokeDasharray="2 2"
+                />
+              )}
+
+              {visibleModels.rf && (
+                <polyline
+                  points={makePolyline("pred_rf")}
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-slate-600 dark:text-slate-400"
+                  strokeWidth="2"
+                />
+              )}
+
+              {visibleModels.xgb && (
+                <polyline
+                  points={makePolyline("pred_xgb")}
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-emerald-600 dark:text-emerald-400"
+                  strokeWidth="2.5"
+                />
+              )}
+
+              {visibleModels.actual && (
+                <polyline
+                  points={makePolyline("actual")}
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-zinc-950 dark:text-white"
+                  strokeWidth="2.5"
+                />
+              )}
+
+              {/* Data points & Interactive Hover targets */}
+              {displayedPoints.map((p, idx) => {
+                const x = getXCoord(idx);
+                const yAct = getYCoord(p.actual);
+                const yXgb = getYCoord(p.pred_xgb);
+                const isHovered = hoveredWeekIndex === idx;
+
+                return (
+                  <g key={`pt-${idx}`}>
+                    {/* Hover vertical tracking line */}
+                    {isHovered && (
                       <line
-                        x1={padLeft}
-                        y1={y}
-                        x2={chartWidth - padRight}
-                        y2={y}
+                        x1={x}
+                        y1={padTop}
+                        x2={x}
+                        y2={chartHeight - padBottom}
                         stroke="currentColor"
-                        className="text-zinc-200 dark:text-zinc-800/80"
-                        strokeDasharray="4 4"
+                        className="text-zinc-400 dark:text-zinc-500"
+                        strokeWidth="1"
+                        strokeDasharray="2 2"
                       />
-                      <text
-                        x={padLeft - 8}
-                        y={y + 3}
-                        textAnchor="end"
-                        className="text-[10px] fill-zinc-400 font-mono"
-                      >
-                        ${Math.round(val).toLocaleString()}
-                      </text>
-                    </g>
-                  );
-                })}
+                    )}
 
-                {/* Shaded holiday intervals */}
-                {displayedPoints.map((p, idx) => {
-                  if (p.is_holiday !== 1) return null;
-                  const x = getXCoord(idx);
-                  return (
-                    <g key={`holiday-band-${idx}`}>
-                      <rect
-                        x={x - 12}
-                        y={padTop}
-                        width={24}
-                        height={chartHeight - padTop - padBottom}
-                        className="fill-amber-400/15 dark:fill-amber-400/10"
-                        rx={4}
+                    {/* Actual circle point */}
+                    {visibleModels.actual && (
+                      <circle
+                        cx={x}
+                        cy={yAct}
+                        r={isHovered ? 4.5 : p.is_holiday ? 3.5 : 2.5}
+                        fill="currentColor"
+                        className={p.is_holiday ? "text-amber-500" : "text-zinc-950 dark:text-white"}
                       />
-                      <text
-                        x={x}
-                        y={padTop - 8}
-                        textAnchor="middle"
-                        className="text-[9px] fill-amber-600 dark:fill-amber-400 font-bold uppercase tracking-wider"
-                      >
-                        ★ Holiday (5×)
-                      </text>
-                    </g>
-                  );
-                })}
+                    )}
 
-                {/* Model Polyline Traces */}
-                {visibleModels.median && (
-                  <polyline
-                    fill="none"
-                    stroke="#9333ea"
-                    strokeWidth="1.8"
-                    strokeDasharray="5 5"
-                    points={makePolyline("pred_median")}
-                    opacity="0.75"
-                  />
-                )}
-                {visibleModels.ridge && (
-                  <polyline
-                    fill="none"
-                    stroke="#d97706"
-                    strokeWidth="2"
-                    points={makePolyline("pred_ridge")}
-                    opacity="0.85"
-                  />
-                )}
-                {visibleModels.rf && (
-                  <polyline
-                    fill="none"
-                    stroke="#0284c7"
-                    strokeWidth="2.2"
-                    points={makePolyline("pred_rf")}
-                    opacity="0.9"
-                  />
-                )}
-                {visibleModels.xgb && (
-                  <polyline
-                    fill="none"
-                    stroke="#059669"
-                    strokeWidth="2.8"
-                    points={makePolyline("pred_xgb")}
-                  />
-                )}
-                {visibleModels.actual && (
-                  <polyline
-                    fill="none"
-                    stroke="currentColor"
-                    className="text-zinc-950 dark:text-zinc-100"
-                    strokeWidth="2.2"
-                    points={makePolyline("actual")}
-                  />
-                )}
+                    {/* XGB circle point */}
+                    {visibleModels.xgb && (
+                      <circle
+                        cx={x}
+                        cy={yXgb}
+                        r={isHovered ? 4 : 2}
+                        fill="currentColor"
+                        className="text-emerald-600 dark:text-emerald-400"
+                      />
+                    )}
 
-                {/* Interactive Points and Hover Circles */}
-                {displayedPoints.map((p, idx) => {
-                  const x = getXCoord(idx);
-                  const yActual = getYCoord(p.actual);
-                  const isHovered = hoveredWeekIndex === idx;
-
-                  return (
-                    <g
-                      key={`pt-${idx}`}
+                    {/* Invisible expanded hit target for smooth hovering */}
+                    <rect
+                      x={x - 10}
+                      y={padTop}
+                      width={20}
+                      height={chartHeight - padTop - padBottom}
+                      fill="transparent"
                       className="cursor-pointer"
                       onMouseEnter={() => setHoveredWeekIndex(idx)}
                       onMouseLeave={() => setHoveredWeekIndex(null)}
-                    >
-                      {/* Vertical highlight on hover */}
-                      {isHovered && (
-                        <line
-                          x1={x}
-                          y1={padTop}
-                          x2={x}
-                          y2={chartHeight - padBottom}
-                          stroke="#059669"
-                          strokeWidth="1.5"
-                          strokeDasharray="2 2"
-                        />
-                      )}
+                    />
+                  </g>
+                );
+              })}
 
-                      {/* Actual dot */}
-                      {visibleModels.actual && (
-                        <circle
-                          cx={x}
-                          cy={yActual}
-                          r={isHovered ? 5 : p.is_holiday ? 4 : 2.5}
-                          className={`${
-                            p.is_holiday
-                              ? "fill-amber-500 stroke-white dark:stroke-black"
-                              : "fill-zinc-950 dark:fill-white"
-                          }`}
-                          strokeWidth="1"
-                        />
-                      )}
-
-                      {/* X-axis tick labels every 4 weeks */}
-                      {idx % 4 === 0 && (
-                        <text
-                          x={x}
-                          y={chartHeight - padBottom + 16}
-                          textAnchor="middle"
-                          className="text-[10px] fill-zinc-500 font-mono"
-                        >
-                          W{p.week}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
-
-              {/* Hover Tooltip Overlay */}
-              {hoveredWeekIndex !== null && displayedPoints[hoveredWeekIndex] && (
-                <div
-                  className="absolute z-20 pointer-events-none p-3 rounded-xl bg-zinc-950 text-white border border-zinc-800 shadow-xl text-xs space-y-1.5 transition-all duration-150"
-                  style={{
-                    left: `${Math.min(
-                      Math.max(getXCoord(hoveredWeekIndex) - 100, 10),
-                      chartWidth - 220
-                    )}px`,
-                    top: "10px",
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-4 font-bold border-b border-zinc-800 pb-1">
-                    <span>
-                      {displayedPoints[hoveredWeekIndex].date} (Week {displayedPoints[hoveredWeekIndex].week})
-                    </span>
-                    {displayedPoints[hoveredWeekIndex].is_holiday === 1 ? (
-                      <span className="px-1.5 py-0.2 rounded bg-amber-400 text-zinc-950 text-[10px]">
-                        Holiday (5×)
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 text-[10px]">Regular</span>
-                    )}
-                  </div>
-                  <div className="space-y-0.5 font-mono text-[11px]">
-                    <div className="flex justify-between gap-3 text-white font-bold">
-                      <span>Ground Actual:</span>
-                      <span>${displayedPoints[hoveredWeekIndex].actual.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between gap-3 text-emerald-400 font-semibold">
-                      <span>Tuned XGBoost:</span>
-                      <span>${displayedPoints[hoveredWeekIndex].pred_xgb.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between gap-3 text-sky-400">
-                      <span>Random Forest:</span>
-                      <span>${displayedPoints[hoveredWeekIndex].pred_rf.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between gap-3 text-amber-400">
-                      <span>Ridge Linear:</span>
-                      <span>${displayedPoints[hoveredWeekIndex].pred_ridge.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between gap-3 text-purple-400">
-                      <span>Hist. Median:</span>
-                      <span>${displayedPoints[hoveredWeekIndex].pred_median.toLocaleString()}</span>
-                    </div>
-                    <div className="pt-1 border-t border-zinc-800 flex justify-between gap-3 text-zinc-300">
-                      <span>XGB Error Gap:</span>
-                      <span>
-                        ${Math.abs(
-                          displayedPoints[hoveredWeekIndex].actual -
-                            displayedPoints[hoveredWeekIndex].pred_xgb
-                        ).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              {/* X-Axis Dates / Week labels */}
+              {displayedPoints.map((p, idx) => {
+                if (idx % 4 !== 0 && idx !== displayedPoints.length - 1) return null;
+                const x = getXCoord(idx);
+                return (
+                  <text
+                    key={`xlabel-${idx}`}
+                    x={x}
+                    y={chartHeight - padBottom + 16}
+                    textAnchor="middle"
+                    className="text-[10px] fill-zinc-400 dark:fill-zinc-500 tabular-nums"
+                  >
+                    W{p.week}
+                  </text>
+                );
+              })}
+            </svg>
           </div>
+
+          {/* Interactive Tooltip Card for hovered week */}
+          {hoveredWeekIndex !== null && displayedPoints[hoveredWeekIndex] && (
+            <div className="p-3.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-xs shadow-md flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="font-bold">
+                  Week {displayedPoints[hoveredWeekIndex].week} • {displayedPoints[hoveredWeekIndex].date}
+                </span>
+                {displayedPoints[hoveredWeekIndex].is_holiday === 1 && (
+                  <span className="ml-2 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-400 text-zinc-950">
+                    5× Holiday Weight
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-4 tabular-nums">
+                <div>
+                  <span className="text-zinc-400 dark:text-zinc-600 text-[11px] block">Actual:</span>
+                  <span className="font-bold">${displayedPoints[hoveredWeekIndex].actual.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-emerald-400 dark:text-emerald-600 text-[11px] block">XGBoost:</span>
+                  <span className="font-bold text-emerald-400 dark:text-emerald-600">
+                    ${displayedPoints[hoveredWeekIndex].pred_xgb.toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 dark:text-zinc-600 text-[11px] block">XGB Error:</span>
+                  <span className="font-bold">
+                    ${Math.abs(displayedPoints[hoveredWeekIndex].actual - displayedPoints[hoveredWeekIndex].pred_xgb).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 dark:text-zinc-600 text-[11px] block">Random Forest:</span>
+                  <span>${displayedPoints[hoveredWeekIndex].pred_rf.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 dark:text-zinc-600 text-[11px] block">Ridge:</span>
+                  <span>${displayedPoints[hoveredWeekIndex].pred_ridge.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 3. TOP DEPARTMENTS & STORE FORMAT DEEP DIVES */}
+      {/* 6. STRUCTURAL DEEP DIVES: FORMAT DYNAMICS & ANCHORS */}
       {/* ------------------------------------------------------------------ */}
       <section id="deep-dives" className="space-y-4">
         <div>
@@ -797,13 +1522,18 @@ export default function DataStudioPage() {
                       <td className="py-2.5 font-bold text-zinc-950 dark:text-white">{s.type}</td>
                       <td className="py-2.5 text-zinc-700 dark:text-zinc-300">{s.store_count} stores</td>
                       <td className="py-2.5 font-bold text-emerald-600 dark:text-emerald-400">{s.revenue_share_pct}%</td>
-                      <td className="py-2.5 font-bold text-zinc-900 dark:text-zinc-100">${s.mean_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                      <td className="py-2.5 text-zinc-700 dark:text-zinc-300">${s.median_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="py-2.5 font-bold text-zinc-900 dark:text-zinc-100">
+                        ${s.mean_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-2.5 text-zinc-700 dark:text-zinc-300">
+                        ${s.median_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
             {/* Key Insights as Bullet Points */}
             <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
               <li className="flex items-start gap-1.5">
@@ -863,17 +1593,13 @@ export default function DataStudioPage() {
                 <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
                 <span><strong className="text-zinc-900 dark:text-zinc-100">Anchor Turnover:</strong> Grocery (Dept 92, $484M) and General Merchandise (Dept 95, $449M) maintain reliable non-holiday turnover.</span>
               </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-slate-800 dark:text-zinc-200 font-bold">•</span>
-                <span><strong className="text-zinc-900 dark:text-zinc-100">Holiday Volatility:</strong> Electronics &amp; Toys (Dept 72) surges by <strong className="text-emerald-600 dark:text-emerald-400 font-bold">2.85x</strong> on holiday weeks, driving high inventory risk.</span>
-              </li>
             </ul>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 4. INTERACTIVE GROUP-BY EXPLORER WITH CSV EXPORT */}
+      {/* 7. INTERACTIVE MULTI-DIMENSIONAL GROUP-BY EXPLORER */}
       {/* ------------------------------------------------------------------ */}
       <section id="explorer" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -898,51 +1624,43 @@ export default function DataStudioPage() {
 
             <button
               onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-950 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-950 shadow-sm transition border border-zinc-950 dark:border-white cursor-pointer active:scale-95"
-              title="Download sliced table as CSV"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition shadow-2xs active:scale-95"
+              title="Download sliced slice as CSV"
             >
-              <Download size={14} />
+              <Download size={13} />
               <span>Export CSV</span>
             </button>
           </div>
         </div>
 
-        {/* Dynamic Interactive Dimensional Bar Graph */}
+        {/* Visual Bar Summary of Grouped Dimension */}
         <div className="p-5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 size={16} className="text-slate-800 dark:text-zinc-200" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-                Interactive Visual Distribution: {groupByDimension.replace(/([A-Z])/g, " $1").trim()}
-              </h4>
-            </div>
-            <div className="flex items-center gap-4 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-xs bg-slate-800 dark:bg-zinc-200 inline-block" />
-                <span>Average Weekly Sales</span>
+          <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+            <div>
+              <span className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
+                Distribution Across {groupByDimension}
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-xs bg-slate-400 dark:bg-zinc-600 inline-block" />
-                <span>Median Sales</span>
-              </span>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Relative comparison of Average Weekly Sales (dark bar) vs. Median Weekly Sales (subtle bar).
+              </p>
             </div>
+            <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+              {dimensionData.length} active cohorts
+            </span>
           </div>
 
-          {/* Interactive Bars */}
-          <div className="space-y-3.5 pt-1">
+          <div className="space-y-3">
             {(() => {
-              const maxAvg = Math.max(...dimensionData.map((d) => Math.max(d.avgSales, 1)));
+              const maxAvg = Math.max(...dimensionData.map((d) => d.avgSales), 1);
               return dimensionData.map((d, idx) => {
-                const avgPct = Math.min(100, Math.max(5, (d.avgSales / maxAvg) * 100));
-                const medPct = Math.min(100, Math.max(3, (d.medianSales / maxAvg) * 100));
+                const avgPct = Math.max(5, Math.min(100, (d.avgSales / maxAvg) * 100));
+                const medPct = Math.max(5, Math.min(100, (d.medianSales / maxAvg) * 100));
 
                 return (
-                  <div key={idx} className="space-y-1 group">
+                  <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
-                          {d.key}
-                        </span>
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100">{d.key}</span>
                         <span className="text-[10px] text-zinc-500 tabular-nums">
                           ({d.records.toLocaleString()} records • ${d.totalSales.toLocaleString()}M total)
                         </span>
