@@ -360,17 +360,8 @@ export default function Sidebar({ activeSection = "hero" }: SidebarProps) {
           </div>
         )}
 
-        {/* Footer: Champion Metric & Theme Switch Toggle */}
+        {/* Footer: GitHub & Theme Switch Toggle */}
         <div className="p-3 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 space-y-2 transition-colors">
-          {!collapsed && (
-            <div className="px-3 py-2 rounded-lg bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/70 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-700 dark:text-zinc-300">Champion WMAE:</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">$1,616.78</span>
-              </div>
-              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">Optuna Tuned XGBoost</div>
-            </div>
-          )}
 
           {/* GitHub Repository Link Button */}
           <a

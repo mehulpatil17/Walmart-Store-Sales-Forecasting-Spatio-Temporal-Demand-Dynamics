@@ -119,16 +119,6 @@ export default function OralDefensePage() {
                   Identified cold-start risk on novel store-department pairs in future test horizons. Engineered a 3-tier hierarchical fallback chain (<code className="font-mono text-[11px]">Store-Dept &rarr; Dept Median &rarr; Global Median</code>) guaranteeing zero unhandled NaNs across all 11 unobserved test pairs.
                 </p>
               </div>
-
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <strong className="text-zinc-950 dark:text-white block font-semibold mb-0.5 text-[11px]">
-                  Reasoning About a Small Perturbation (Viva Scenario):
-                </strong>
-                <p className="text-zinc-600 dark:text-zinc-400 text-[11px] italic">
-                  <strong>Examiner:</strong> "What happens if holiday weighting in WMAE increases from 5x to 10x?"<br />
-                  <strong>Mehul:</strong> "A 10x penalty shifts the gradient objective to overweight peak holiday weeks (Weeks 47 and 51) even more aggressively. In ablation tests, this lowers holiday WMAE by ~8%, but inflates non-holiday error by ~3.2% due to conservative inventory buffers. The 5x weight perfectly matches real-world retail stockout vs holding cost economics ($1,750 vs $350)."
-                </p>
-              </div>
             </div>
           </div>
 
@@ -172,16 +162,6 @@ export default function OralDefensePage() {
                 </strong>
                 <p className="text-zinc-600 dark:text-zinc-400">
                   Identified the observational data ceiling: sales reflect censored demand bounded by store inventory stockouts rather than true unconstrained consumer appetite. Formulated mitigating confidence intervals and risk tiers.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <strong className="text-zinc-950 dark:text-white block font-semibold mb-0.5 text-[11px]">
-                  Reasoning About a Small Perturbation (Viva Scenario):
-                </strong>
-                <p className="text-zinc-600 dark:text-zinc-400 text-[11px] italic">
-                  <strong>Examiner:</strong> "What happens if fuel prices surge by +50% due to a macroeconomic supply shock?"<br />
-                  <strong>Akshit:</strong> "Fuel price alone has near-zero direct correlation ($r = -0.0001$) and low feature gain (&lt;0.8%). In isolation, a +50% shock impacts forecast weekly sales by less than 0.4%. However, if the shock cascades into CPI and unemployment, our store-level forward-filled macro signals dampen discretionary departments (Dept 72 Toys) by 6.2% while keeping staple groceries (Dept 92) flat."
                 </p>
               </div>
             </div>

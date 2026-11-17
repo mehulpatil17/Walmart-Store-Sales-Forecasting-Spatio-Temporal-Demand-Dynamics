@@ -135,9 +135,10 @@ export default function OverviewPage() {
 
   // Dynamic calculations for Threshold Slider & Cost Model
   const toleranceItem = useMemo(() => {
-    return (
-      diagnostic_curves.tolerance_curve.find((t) => t.threshold_pct === errorTolerance) ||
-      diagnostic_curves.tolerance_curve[3]
+    const list = diagnostic_curves.tolerance_curve;
+    return list.reduce((prev, curr) =>
+      Math.abs(curr.threshold_pct - errorTolerance) < Math.abs(prev.threshold_pct - errorTolerance) ? curr : prev,
+      list[0]
     );
   }, [diagnostic_curves.tolerance_curve, errorTolerance]);
 
@@ -1007,7 +1008,9 @@ export default function OverviewPage() {
               <span className="text-lg font-bold text-zinc-950 dark:text-white block mt-1 tabular-nums">
                 {toleranceItem.xgb_pct}%
               </span>
-              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-semibold">+24.5% vs baseline</span>
+              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-semibold">
+                +{(toleranceItem.xgb_pct - toleranceItem.base_pct).toFixed(1)}% vs baseline
+              </span>
             </div>
           </div>
 

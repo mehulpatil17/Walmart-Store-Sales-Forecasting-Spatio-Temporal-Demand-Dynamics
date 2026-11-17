@@ -56,6 +56,7 @@ button, input, select, textarea, pre, code, kbd, samp {
 /* Smooth global micro-animations and transitions */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
 }
 
 /* Quick smooth button animations: label roll + active scale */

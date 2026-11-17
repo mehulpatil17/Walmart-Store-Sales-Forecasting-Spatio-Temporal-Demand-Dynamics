@@ -87,10 +87,49 @@ export default function PredictorPage() {
     setPredictionResult(null);
   };
 
-  // Scoring engine: Instant client-side calibrated surrogate scoring
-  const runPrediction = (e: React.FormEvent) => {
+  // Scoring engine: Tries live local model_server.py checkpoint first, falling back to calibrated surrogate
+  const runPrediction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const payload = {
+      store,
+      dept,
+      storeType,
+      storeSize,
+      week,
+      isHoliday,
+      temperature,
+      fuelPrice,
+      cpi,
+      unemployment,
+      markdownTotal
+    };
+
+    let serverResult: PredictionResultType | null = null;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 600);
+      const res = await fetch("http://127.0.0.1:5001/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        serverResult = await res.json();
+      }
+    } catch {
+      // Local Python model server not active (expected in static GitHub Pages export)
+    }
+
+    if (serverResult && serverResult.pointForecast !== undefined) {
+      setPredictionResult(serverResult);
+      setHasPredicted(true);
+      setLoading(false);
+      return;
+    }
 
     // Client-side calibrated surrogate calculation (100% offline & static compatible)
     let deptBase = 15000;
