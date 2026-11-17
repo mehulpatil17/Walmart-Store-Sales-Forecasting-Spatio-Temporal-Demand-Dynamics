@@ -252,7 +252,6 @@ chmod +x run_portal.sh
 | `generate_results_json.py` | Generates single-source `results.json` for the portal |
 | `model_server.py` | Lightweight zero-dependency HTTP model server serving live XGBoost predictions on port 5001 |
 | `reports/` | Academic coursework reports (EDA report, evaluation report, model recommendation, course prompt) |
-| `PROJECT_FILE_INVENTORY.md` | Full repository file index with purpose, technical role, and status for each file |
 | `portal/` | Next.js interactive research dashboard |
 | `data/` | Raw Kaggle CSV files (download via `download_dataset.py` or Kaggle CLI) |
 | `models/` | Trained model checkpoints (regenerate via `training_pipeline.py`) |
