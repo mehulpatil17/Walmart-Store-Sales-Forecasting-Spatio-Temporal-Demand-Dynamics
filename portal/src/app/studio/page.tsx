@@ -1045,11 +1045,22 @@ export default function DataStudioPage() {
           {/* Store Selector */}
           <div>
             <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">
-              Select Physical Store (45 Available)
+              Select Physical Store ({holdoutData.stores.length} Formats Available)
             </label>
             <select
               value={selectedStore}
-              onChange={(e) => setSelectedStore(Number(e.target.value))}
+              onChange={(e) => {
+                const newStoreId = Number(e.target.value);
+                setSelectedStore(newStoreId);
+                if (!holdoutData.series[`${newStoreId}_${selectedDept}`]) {
+                  const firstActive = holdoutData.departments.find(
+                    (d) => holdoutData.series[`${newStoreId}_${d.id}`]
+                  );
+                  if (firstActive) {
+                    setSelectedDept(firstActive.id);
+                  }
+                }
+              }}
               className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-950 dark:text-white shadow-2xs"
             >
               {holdoutData.stores.map((s) => (
@@ -1063,18 +1074,21 @@ export default function DataStudioPage() {
           {/* Department Selector */}
           <div>
             <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-1">
-              Select Department Unit (81 Available)
+              Select Department Unit ({holdoutData.departments.length} Archetypes Available)
             </label>
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(Number(e.target.value))}
               className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-semibold text-zinc-950 dark:text-white shadow-2xs"
             >
-              {holdoutData.departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  Dept #{d.id} — {d.name}
-                </option>
-              ))}
+              {holdoutData.departments.map((d) => {
+                const isAvailable = Boolean(holdoutData.series[`${selectedStore}_${d.id}`]);
+                return (
+                  <option key={d.id} value={d.id}>
+                    Dept #{d.id} — {d.name}{!isAvailable ? " (Inactive in this Store)" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -1102,36 +1116,55 @@ export default function DataStudioPage() {
                 type="button"
                 onClick={() => {
                   setSelectedStore(1);
-                  setSelectedDept(1);
+                  setSelectedDept(92);
                 }}
                 className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
-                  selectedStore === 1 && selectedDept === 1
+                  selectedStore === 1 && selectedDept === 92
                     ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
                     : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
                 }`}
               >
-                Store 1 / Dept 1 (Candy)
+                Store 1 / Dept 92 (Grocery)
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedStore(4);
-                  setSelectedDept(92);
+                  setSelectedStore(20);
+                  setSelectedDept(95);
                 }}
                 className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
-                  selectedStore === 4 && selectedDept === 92
+                  selectedStore === 20 && selectedDept === 95
                     ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
                     : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
                 }`}
               >
-                Store 4 / Dept 92 (Grocery)
+                Store 20 / Dept 95 (General)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStore(14);
+                  setSelectedDept(38);
+                }}
+                className={`px-2 py-1 rounded text-[11px] font-semibold border transition ${
+                  selectedStore === 14 && selectedDept === 38
+                    ? "bg-slate-800 text-white dark:bg-zinc-800 dark:text-zinc-100 border-slate-700"
+                    : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700"
+                }`}
+              >
+                Store 14 / Dept 38 (Pharmacy)
               </button>
             </div>
           </div>
         </div>
 
         {/* Selected Series KPI Scoreboard */}
-        {currentSeries && (
+        {!currentSeries ? (
+          <div className="p-6 text-center text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 space-y-1">
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">No active holdout records for Store #{selectedStore} — Dept #{selectedDept}</p>
+            <p className="text-[11px]">This department was not active in this physical format during the 39-week holdout evaluation window. Please choose another department from the selector or pick one of the curated presets above.</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="p-3.5 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xs">
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Series Info</span>
@@ -1283,6 +1316,18 @@ export default function DataStudioPage() {
                   </g>
                 );
               })}
+
+              {/* Empty state overlay inside SVG if no displayed points */}
+              {displayedPoints.length === 0 && (
+                <text
+                  x={chartWidth / 2}
+                  y={chartHeight / 2}
+                  textAnchor="middle"
+                  className="text-xs fill-zinc-400 dark:fill-zinc-500 font-medium"
+                >
+                  No holdout trajectory points available for this selection.
+                </text>
+              )}
 
               {/* Holiday shaded vertical regions */}
               {displayedPoints.map((p, idx) => {
